@@ -1,0 +1,4 @@
+# we don't like pdf
+*.pdf
+# who even needs cache?
+simulator/__pycache__
