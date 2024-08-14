@@ -6,7 +6,7 @@ import conf
 import networkx as nx
 import matplotlib.pyplot as plt
 import math
-
+import numpy as np
 
 def random(pod, graph, debug=False, visualize=False):
     """
@@ -88,7 +88,6 @@ def evolutionary_solve(pod, graph, debug=False, visualize=False):
         pod: The pod to be used in the evolutionary solve.
         graph: The graph on which the evolutionary solve will be performed.
         debug: A flag to enable/disable debugging information (default is False).
-        visualize: A flag to enable/disable visualization (default is False).
     Returns:
         The best graph after performing the evolutionary solve.
     """
@@ -265,7 +264,7 @@ def ant_colony_solve(pod, graph, debug=False, visualize=False):
                     print(f"perfect solution found: {perfect_solution}")
                 if visualize:
                     draw_ant_graph()
-                print(f"considered {len(list(node for node in ant_solution_graph.nodes if ant_solution_graph.nodes[node]["type"] == "solution"))} solutions")
+                print(f"considered {len([node for node in ant_solution_graph.nodes if ant_solution_graph.nodes[node]['type'] == 'solution'])} solutions")
                 return perfect_solution
 
         for ant in range(amount_of_ants):
@@ -287,17 +286,71 @@ def simulated_annealing_solve(pod, graph, debug=False, visualize=False):
     set_of_pods = list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod")
     assignments = list(itertools.product(set_of_nodes, set_of_pods))
     solutions_checked = 0
+    solution_array = []
     if debug:
         print(assignments)
     combinations = list(itertools.combinations(assignments, len(set_of_pods)))
     if debug:
         print(combinations)
-
-    def probability_to_move(e_old_state, e_new_state, t):
-        if e_new_state < e_old_state:
-            return 1
-        else:
-            return math.exp((e_old_state - e_new_state) / t)
-
     
+    current_best = (evaluate(graph), graph)
+    for combination in combinations:
+        solutions_checked += 1
+        # create new graph
+        new_graph = graph.copy()
+        # remove all assignments
+        new_graph.remove_edges_from((edge for edge in new_graph.edges if new_graph.edges[edge]["type"] == "assign"))
+        assigned_pods = []
+        valid=True
+        if debug:
+            print("#"*50)
+            print(f"combination: {combination}")
+        for assignment in combination:
+            if debug:
+                print(f"assignment: {assignment}")
+            if assignment[1] in assigned_pods:
+                valid=False
+                break
+            else:
+                assigned_pods.append(assignment[1])
+                new_graph.add_edge(assignment[1], assignment[0], type="assign")
+        if valid:
+            evaluation = evaluate(new_graph, debug=debug)
+            solution_array.append(evaluation)
+
+
+            # if evaluation < current_best[0]:
+            #     current_best = (evaluation, new_graph)
+            #     if visualize:
+            #         draw_graph(new_graph, conf.simple_graph, "Evaluation: " + str(evaluation))
+            #     if debug:
+            #         print(f"new best: {current_best[0]}")
+            #     if evaluation == 0:
+            #         print(f"checked {solutions_checked} combinations")
+            #         return current_best[1]
+            # else:
+            #     if debug:
+            #         print(f"evaluation: {evaluation}")
+        else:
+            if debug:
+                print("invalid combination")
+
+    # calculate entropy of solution array
+    # Example data
+    data = np.array(solution_array)
+
+    # Calculate the probability distribution
+    values, counts = np.unique(data, return_counts=True)
+    probabilities = counts / counts.sum()
+
+    # Calculate entropy
+    ent = -np.sum(probabilities * np.log2(probabilities))
+    print(f'Entropy: {ent:.4f}')
+    if visualize:
+        plt.plot(solution_array)
+        plt.title("SA")
+        # plt.axis('off')
+        plt.tight_layout()
+        plt.show()
+
     return graph

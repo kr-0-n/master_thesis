@@ -5,11 +5,11 @@ from conf import simple_graph
 from evaluator import evaluate
 import math
 
-selected_algorithm = algorithm.perfect_solve
+selected_algorithm = algorithm.random
 
 
 def schedule(node, graph):
-    return selected_algorithm(node, graph, debug=False, visualize=False)
+    return selected_algorithm(node, graph, debug=False, visualize=True)
 
 def setup_graph_from_conf(conf):
     # Create an undirected graph
