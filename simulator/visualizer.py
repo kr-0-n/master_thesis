@@ -1,8 +1,8 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
-def draw_graph(graph, graph_data, title):
-    if len([node for node in graph.nodes if graph.nodes[node]["type"] == "node"]) == 4 and len([node for node in graph.nodes if graph.nodes[node]["type"] == "pod"]) <= 5:
+def draw_graph(graph,  title, graph_data=None):
+    if graph_data != None and len([node for node in graph.nodes if graph.nodes[node]["type"] == "node"]) == 4 and len([node for node in graph.nodes if graph.nodes[node]["type"] == "pod"]) <= 5:
         pos=graph_data['pos']
     else:
         pos = nx.spring_layout(graph)

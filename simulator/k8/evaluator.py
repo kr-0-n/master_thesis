@@ -58,3 +58,24 @@ def evaluate(graph, debug=False):
                 print(f"for pod {pod} to connect to {connection[0]} traverse nodes: " + str(shortest_path) + " latency: " + str(latency) + "/" + str(connection[1]) + " throughput: " + str(throughput) + "/" + str(connection[2]))
     print(f"Evaluation: {round(val, 2)}")
     return round(val, 2)
+
+def evaluate_step(old_graph, new_graph, debug=False):
+    val = evaluate(new_graph, debug)
+    # check if a pod moved to a new node in the new graph
+    # get all 'assign' connections in both graphs and compare them
+    old_assignments = []
+    new_assignments = []
+    for edge in old_graph.edges:
+        if old_graph.edges[edge]["type"] == "assign":
+            old_assignments.append(edge)
+    for edge in new_graph.edges:
+        if new_graph.edges[edge]["type"] == "assign":
+            new_assignments.append(edge)
+    if debug:
+        print(f"Old assignments: {old_assignments}")
+        print(f"New assignments: {new_assignments}")
+    for assignment in old_assignments:
+        if assignment not in new_assignments:
+            val += 100
+
+    return round(val, 2)

@@ -1,6 +1,6 @@
 import random as rnd
 import itertools
-from evaluator import evaluate
+from k8.evaluator import evaluate, evaluate_step
 from visualizer import draw_graph
 import conf
 import networkx as nx
@@ -8,12 +8,15 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 
-def random(pod, graph, debug=False, visualize=False):
+def random(graph, pod=None, debug=False, visualize=False):
     """
     A function that adds a node to the graph and attaches it to a randomly chosen existing node.
     Takes input parameters node and graph, with optional debug and visualize flags. 
     Returns the updated graph after adding the node and edge.
     """
+    if pod is None:
+        pod = rnd.choice(list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod"))
+        graph.remove_node(pod)
     #add node to graph
     graph.add_node(pod[0], **pod[1])
     #attach new node to random existing node
@@ -21,14 +24,15 @@ def random(pod, graph, debug=False, visualize=False):
     #graph.add_edge(1 , node[0])
     return graph
 
-def perfect_solve(pod, graph, debug=False, visualize=False):
+def perfect_solve(graph, pod=None, debug=False, visualize=False):
     """
     A function that adds a node to the graph and tries all possible connections.
     Takes input parameters node and graph, with optional debug and visualize flags. 
     Returns the best graph after adding the node and edge.
     """
-    #add node to graph
-    graph.add_node(pod[0], **pod[1])
+    if pod != None:
+        #add node to graph
+        graph.add_node(pod[0], **pod[1])
     #try all node-pod connections
     set_of_nodes = list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")
     set_of_pods = list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod")
@@ -62,7 +66,7 @@ def perfect_solve(pod, graph, debug=False, visualize=False):
                 assigned_pods.append(assignment[1])
                 new_graph.add_edge(assignment[1], assignment[0], type="assign")
         if valid:
-            evaluation = evaluate(new_graph, debug=debug)
+            evaluation = evaluate_step(graph, new_graph, debug=debug)
             if evaluation < current_best[0]:
                 current_best = (evaluation, new_graph)
                 if visualize:
@@ -81,7 +85,7 @@ def perfect_solve(pod, graph, debug=False, visualize=False):
 
     return current_best[1]
 
-def evolutionary_solve(pod, graph, debug=False, visualize=False):
+def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
     """
     A function that performs an evolutionary solve on the input graph.
     Parameters:
@@ -95,9 +99,19 @@ def evolutionary_solve(pod, graph, debug=False, visualize=False):
     chilren_per_parent = 5
     survivors_per_generation = 3
 
-    # Generate a random assignment and then mutate the solution multiple times
-    graph = random(pod, graph, debug=debug, visualize=visualize)
-    initial_best = (evaluate(graph, debug=False), graph)
+    # connect new pod to the same node as its wanted connection pod
+    first_solution = graph.copy()
+    if pod != None:
+        first_solution.add_node(pod[0], **pod[1])
+        # choose random connection from the wanted connections
+        if len(pod[1]["network"]) > 0:
+            connection = rnd.choice(pod[1]["network"])
+            if connection[0] in first_solution.nodes and connection[1] in first_solution.nodes:
+                first_solution.add_edge(connection[0], connection[1], type="assign")
+        else:
+            first_solution = random(pod, graph.copy(), debug=debug, visualize=visualize)
+
+    initial_best = (evaluate_step(graph, first_solution, debug=False), first_solution)
 
 
     current_best = [initial_best for i in range(survivors_per_generation)]
@@ -117,7 +131,7 @@ def evolutionary_solve(pod, graph, debug=False, visualize=False):
                 pod = (pod, current_graph.nodes[pod])
                 current_graph.remove_node(pod[0])
                 current_graph = random(pod, current_graph, debug=debug, visualize=visualize)
-                children.append((evaluate(current_graph, debug=False), current_graph))
+                children.append((evaluate_step(graph, current_graph, debug=False), current_graph))
             if debug:
                 print(f"Generation {generation}: {current_best}")
         children.sort(key=lambda x: x[0])
@@ -131,7 +145,7 @@ def evolutionary_solve(pod, graph, debug=False, visualize=False):
     print(f"checked {generations * chilren_per_parent * survivors_per_generation} combinations")
     return current_best[0][1]
 
-def ant_colony_solve(pod, graph, debug=False, visualize=False):
+def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
     """
     Solves a graph problem using the Ant Colony Algorithm.
     Args:
@@ -146,11 +160,14 @@ def ant_colony_solve(pod, graph, debug=False, visualize=False):
     Note:
         The function assumes that the graph is a NetworkX graph object and that the pod is a tuple representing a pod and its properties.
     """
-    graph = random(pod, graph, debug=debug, visualize=visualize)
+    if pod == None:
+        first_solution = graph.copy()
+    else:
+        first_solution = random(pod, graph.copy(), debug=debug, visualize=visualize)
     ant_solution_graph = nx.DiGraph()
-    root_node = (evaluate(graph, debug=False), graph) # syntax for an entry in the ant solution graph: (evaluation, graph)
+    root_node = (evaluate_step(graph, first_solution, debug=False), first_solution) # syntax for an entry in the ant solution graph: (evaluation, graph)
     ant_solution_graph.add_node(root_node, type="solution", color='blue') 
-    amount_of_ants = 50
+    amount_of_ants = 10
     moves_per_ant = 10
     pheromone_evaporation = 0.9
     if debug:
@@ -233,7 +250,7 @@ def ant_colony_solve(pod, graph, debug=False, visualize=False):
     def attach_solutions(node, solution_list):
         perfect_solution = None
         for solution in solution_list:
-            solution_node = (evaluate(solution, debug=False), solution)
+            solution_node = (evaluate_step(graph, solution, debug=False), solution)
             if(solution_node[0] == 0):
                 # best possible solution was found
                 perfect_solution = solution_node[1]
