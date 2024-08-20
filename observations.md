@@ -12,3 +12,11 @@ write nice visualization for evolutionary solver?
 
 # ACO
 - uses evaluation function as heuristic
+
+
+---------------------------
+# Perfect Solve
+should it only solve every step perfectly or the entire time? (would need knowledge of the future)
+
+# Evolutionary solve
+Performs worse in some scenarios with this heuristic - early pods occupy a node and pods with stronger network requirements now have to go to a suboptimal node
