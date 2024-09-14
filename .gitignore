@@ -2,4 +2,4 @@
 *.pdf
 # who even needs cache?
 simulator/__pycache__
-k8/__pycache__
+simulator/k8/__pycache__
