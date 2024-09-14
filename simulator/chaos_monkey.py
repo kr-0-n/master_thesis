@@ -8,7 +8,8 @@ The chaos monkey creates chaos by deleting nodes, pods, and links. Beware, they 
 def delete_node(graph: nx.DiGraph):
     # remove random node and all adjacent assigned pods
     node = rnd.choice(list(node for node in graph.nodes if graph.nodes[node]["type"] == "node"))
-    adjacent_nodes = graph.neighbors(node)
+    print(f"{__name__}: Deleting node {node}")
+    adjacent_nodes = list(graph.neighbors(node))
     for adj_node in adjacent_nodes:
         if graph.nodes[adj_node]["type"] == "pod":
             graph.remove_node(adj_node)
@@ -18,6 +19,7 @@ def delete_node(graph: nx.DiGraph):
 
 def delete_pod(graph):
     pod = rnd.choice(list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod"))
+    print(f"{__name__}: Deleting pod {pod}")
     graph.remove_node(pod)
     for edge in graph.edges:
         if edge[0] == pod or edge[1] == pod:
@@ -25,6 +27,8 @@ def delete_pod(graph):
     return graph
 
 def delete_link(graph):
+    # print(f"{__name__}: Available Connections: {list(link for link in graph.edges if "type" in graph.edges[link] and graph.edges[link]["type"] == "connection")}")
     link = rnd.choice(list(link for link in graph.edges if "type" in graph.edges[link] and graph.edges[link]["type"] == "connection"))
+    print(f"{__name__}: Deleting link {link}")
     graph.remove_edge(link[0], link[1])
     return graph

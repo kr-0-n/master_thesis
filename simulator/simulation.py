@@ -2,21 +2,25 @@ from k8 import kubernetes_wrapper
 import chaos_monkey
 import conf
 import random as rnd
+import network_administration
 
 time = 0
-
-kubernetes_wrapper.deploy(conf.deployment)
+k8 = kubernetes_wrapper.Kubernetes(network_administration.setup_network())
+k8.deploy(conf.deployment)
 
 while True:
-    # if time % 10 == 0 and current_pod < len(simple_graph['pods']):
-    #     new_graph = schedule(simple_graph['pods'][current_pod], graph.copy())
-    #     print(f"Step evaluation: {evaluate_step(graph, new_graph, debug=True)}")
-    #     graph = new_graph
-    #     current_pod += 1
-    #     draw_graph(graph, simple_graph, " | Evaluation: " + str(evaluate(graph, debug=False)))
-    kubernetes_wrapper.tick(time)
+    k8.tick(time)
     # randomely invoke the chaos monkey
-    if rnd.random() < 0.5:
-        chaos_monkey.delete_pod(kubernetes_wrapper.graph)
+    if rnd.random() < 0.1:
+        if len([node for node in k8.graph.nodes if k8.graph.nodes[node]["type"] == "node"]) > 1:
+            chaos_monkey.delete_node(k8.graph)
+    if rnd.random() < 0.1:
+        chaos_monkey.delete_pod(k8.graph)
+    if rnd.random() < 0.1:
+        chaos_monkey.delete_link(k8.graph)
+    # periodically repair the network
+    if time % 5 == 0:
+        network_administration.repair_network(k8.graph)
+        k8.scheduler.optimize(k8.graph)
     time += 1
-    print(f"Time: {time}")
+    print(f"{__name__}: Time: {time}")

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 
-def random(graph, pod=None, debug=False, visualize=False):
+def random(graph: nx.Graph, pod=None, debug=False, visualize=False):
     """
     A function that adds a node to the graph and attaches it to a randomly chosen existing node.
     Takes input parameters node and graph, with optional debug and visualize flags. 
@@ -16,8 +16,11 @@ def random(graph, pod=None, debug=False, visualize=False):
     """
     if pod is None:
         pod = rnd.choice(list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod"))
-        graph.remove_node(pod)
+        # get node with all attributes
+        pod = (pod, graph.nodes[pod])
+        graph.remove_node(pod[0])
     #add node to graph
+    # print(pod)
     graph.add_node(pod[0], **pod[1])
     #attach new node to random existing node
     graph.add_edge(rnd.choice(list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")), pod[0], type="assign")
@@ -58,7 +61,7 @@ def perfect_solve(graph, pod=None, debug=False, visualize=False):
             print(f"combination: {combination}")
         for assignment in combination:
             if debug:
-                print(f"assignment: {assignment}")
+                print(f"assignment: {assignments}")
             if assignment[1] in assigned_pods:
                 valid=False
                 break
@@ -99,26 +102,31 @@ def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
     chilren_per_parent = 5
     survivors_per_generation = 3
 
+
+    initial_unassigned = graph.copy()
+    initial_unassigned.add_node(pod[0], **pod[1])
+
     # connect new pod to the same node as its wanted connection pod
     first_solution = graph.copy()
     if pod != None:
-        first_solution.add_node(pod[0], **pod[1])
-        # choose random connection from the wanted connections
-        if len(pod[1]["network"]) > 0:
-            connection = rnd.choice(pod[1]["network"])
-            if connection[0] in first_solution.nodes and connection[1] in first_solution.nodes:
-                first_solution.add_edge(connection[0], connection[1], type="assign")
-        else:
-            first_solution = random(pod, graph.copy(), debug=debug, visualize=visualize)
+        # This is a questionable approach which decreases the performance.
+        # # choose random connection from the wanted connections
+        # if len(pod[1]["network"]) > 0:
+        #     first_solution.add_node(pod[0], **pod[1])
+        #     connection = rnd.choice(pod[1]["network"])
+        #     if connection[0] in first_solution.nodes and connection[1] in first_solution.nodes:
+        #         first_solution.add_edge(connection[0], connection[1], type="assign")
+        # else:
+            random(first_solution, pod, debug=debug, visualize=visualize)
 
-    initial_best = (evaluate_step(graph, first_solution, debug=False), first_solution)
+    initial_best = (evaluate_step(initial_unassigned, first_solution, debug=False), first_solution)
+    current_best = initial_best
 
 
-    current_best = [initial_best for i in range(survivors_per_generation)]
-    print(current_best)
+    survivors = [initial_best for i in range(survivors_per_generation)]
     for generation in range(generations):
         if debug:
-            print(f"Generation {generation}: {current_best}")
+            print(f"Generation {generation}: {survivors}")
         children = []
         for parent in range(survivors_per_generation):
             if debug:
@@ -126,24 +134,22 @@ def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
             for i in range(chilren_per_parent):
                 if debug:
                     print(f"Child {i}")
-                current_graph = current_best[parent][1].copy()
+                current_graph = survivors[parent][1].copy()
                 pod = rnd.choice(list(node for node in current_graph.nodes if current_graph.nodes[node]["type"] == "pod"))
+                if debug: print(f"Reassign Pod: {pod}")
                 pod = (pod, current_graph.nodes[pod])
                 current_graph.remove_node(pod[0])
-                current_graph = random(pod, current_graph, debug=debug, visualize=visualize)
-                children.append((evaluate_step(graph, current_graph, debug=False), current_graph))
-            if debug:
-                print(f"Generation {generation}: {current_best}")
+                current_graph = random(current_graph, pod, debug=debug, visualize=visualize)
+                children.append((evaluate_step(graph, current_graph, debug=True), current_graph))
         children.sort(key=lambda x: x[0])
-        for i in range(len(children[:survivors_per_generation])):
-            if(current_best[i][0] > children[i][0]):
-                current_best[i] = children[i]
-                break
+        survivors = children[:survivors_per_generation]
+        if survivors[0][0] < current_best[0]:
+            current_best = survivors[0]
 
         if debug:
-            print(f"Generation {generation}: {current_best}")
+            print(f"Generation {generation}: {survivors}")
     print(f"checked {generations * chilren_per_parent * survivors_per_generation} combinations")
-    return current_best[0][1]
+    return current_best[1]
 
 def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
     """
@@ -163,7 +169,7 @@ def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
     if pod == None:
         first_solution = graph.copy()
     else:
-        first_solution = random(pod, graph.copy(), debug=debug, visualize=visualize)
+        first_solution = random(graph.copy(), pod, debug=debug, visualize=visualize)
     ant_solution_graph = nx.DiGraph()
     root_node = (evaluate_step(graph, first_solution, debug=False), first_solution) # syntax for an entry in the ant solution graph: (evaluation, graph)
     ant_solution_graph.add_node(root_node, type="solution", color='blue') 

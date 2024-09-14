@@ -1,35 +1,27 @@
 import conf
 import networkx as nx
 import k8.scheduler as scheduler 
+from k8.evaluator import evaluate_step
 import visualizer
+import k8.algorithm
 
-current_deployment = None
-old_graph: nx.Graph = nx.Graph()
-graph: nx.Graph = None
-def tick(time):
-    if current_deployment is not None:
-        # check if all pods from the deployment are running
-        for pod in current_deployment['pods']:
-            if pod[0] not in [node for node in graph.nodes if graph.nodes[node]["type"] == "pod"]:
-                print(f"Pod {pod[0]} is not running")
-                scheduler.schedule(pod, graph)
-                visualizer.draw_graph(graph, "k8")
-    return
+class Kubernetes:
+    def __init__(self, network: nx.Graph):
+        print(f"{__name__}: Kubernetes initialized")
+        self.scheduler = scheduler.Scheduler(k8.algorithm.random)
+        self.graph = network
 
-def setup_graph_from_conf(conf):
-    # Create an undirected graph
-    G = nx.Graph()
+    def tick(self, time):
+        if self.current_deployment is not None:
+            # check if all pods from the deployment are running
+            for pod in self.current_deployment['pods']:
+                if pod[0] not in [node for node in self.graph.nodes if self.graph.nodes[node]["type"] == "pod"]:
+                    print(f"{__name__}: Pod {pod[0]} is not running")
+                    new_graph = self.scheduler.schedule(pod, self.graph)
+                    visualizer.draw_graph(new_graph, "k8: " + str(evaluate_step(self.graph, new_graph, debug=False)))
+                    self.graph = new_graph
+        return
 
-    # Add nodes
-    G.add_nodes_from(conf['nodes'])
-
-    # Add edges
-    G.add_edges_from(conf['edges'], type="connection")
-    return G
-
-def deploy(deployment):
-    global current_deployment
-    current_deployment = deployment
-    return
-
-graph = setup_graph_from_conf(conf.simple_graph)
+    def deploy(self, deployment):
+        self.current_deployment = deployment
+        return

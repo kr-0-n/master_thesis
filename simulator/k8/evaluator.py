@@ -5,7 +5,7 @@ def evaluate(graph, debug=False):
     # Remove all wanted connections (they are unwanted)
     graph.remove_edges_from((edge for edge in graph.edges if graph.edges[edge]["type"] == "wanted_connection"))
     
-    print("-"*50)
+    if debug: print("-"*50)
     val = 0
     # See if nodes are overloaded
     for node in graph.nodes:
@@ -20,7 +20,8 @@ def evaluate(graph, debug=False):
                 val += cpu_load - graph.nodes[node]["cpu"]
             if mem_load - graph.nodes[node]["mem"] > 0:
                 val += mem_load - graph.nodes[node]["mem"]
-            print(f"node {node}: cpu {cpu_load}/{graph.nodes[node]['cpu']} | mem {mem_load}/{graph.nodes[node]['mem']}")
+            if debug:
+                print(f"node {node}: cpu {cpu_load}/{graph.nodes[node]['cpu']} | mem {mem_load}/{graph.nodes[node]['mem']}")
     # See if pod network requirements are fullfilled
     # Start with latency
     for pod in graph.nodes:
@@ -54,13 +55,14 @@ def evaluate(graph, debug=False):
                     val += (latency/connection[1])*100-100
                 if throughput < connection[2]:
                     val += 100-(throughput/connection[2])*100
-                
-                print(f"for pod {pod} to connect to {connection[0]} traverse nodes: " + str(shortest_path) + " latency: " + str(latency) + "/" + str(connection[1]) + " throughput: " + str(throughput) + "/" + str(connection[2]))
-    print(f"Evaluation: {round(val, 2)}")
+                if debug:
+                    print(f"for pod {pod} to connect to {connection[0]} traverse nodes: " + str(shortest_path) + " latency: " + str(latency) + "/" + str(connection[1]) + " throughput: " + str(throughput) + "/" + str(connection[2]))
+    
+    if debug:print(f"Evaluation: {round(val, 2)}")
     return round(val, 2)
 
 def evaluate_step(old_graph, new_graph, debug=False):
-    val = evaluate(new_graph, debug)
+    val = evaluate(new_graph, False)
     # check if a pod moved to a new node in the new graph
     # get all 'assign' connections in both graphs and compare them
     old_assignments = []
@@ -77,5 +79,5 @@ def evaluate_step(old_graph, new_graph, debug=False):
     for assignment in old_assignments:
         if assignment not in new_assignments:
             val += 100
-
+    if debug:print(f"Evaluation: {round(val, 2)}")
     return round(val, 2)
