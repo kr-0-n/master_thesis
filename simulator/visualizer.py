@@ -17,7 +17,8 @@ def draw_graph(graph,  title, graph_data=None):
     nx.draw_networkx_edges(graph, edgelist=[edge for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "wanted_connection"], pos=pos, alpha=0.5, edge_color="green")
     nx.draw_networkx_edge_labels(graph, pos=pos, font_size=8, font_color='black', edge_labels={edge:str(graph.edges[edge]["latency"]) +"ms," + str(graph.edges[edge]["throughput"]) + "mbps" for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"]=="wanted_connection"})
 
-    nx.draw_networkx_edges(graph, edgelist=[edge for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "connection" ], pos=pos, alpha=0.5, edge_color="black")
+    edge_connection_colors = [(max((list(graph.edges[edge]["wanted_service"].values())[0].m - graph.edges[edge]["service"].m)/10, 0),0.1,0.1,1) for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "connection" ]
+    nx.draw_networkx_edges(graph, edgelist=[edge for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "connection" ], pos=pos, alpha=0.5, edge_color=edge_connection_colors)
     nx.draw_networkx_edge_labels(graph, pos=pos, font_size=8, font_color='black', edge_labels={edge:str(graph.edges[edge]["latency"]) +"ms," + str(graph.edges[edge]["throughput"]) + "mbps" for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"]=="connection" and "latency" in graph.edges[edge] and "throughput" in graph.edges[edge]})
     
     nx.draw_networkx_edges(graph, edgelist=[edge for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "assign" ], pos=pos, alpha=0.5, edge_color="black")

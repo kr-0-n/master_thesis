@@ -4,6 +4,7 @@ import conf
 import random as rnd
 import network_administration
 
+rnd.seed(1234)
 time = 0
 k8 = kubernetes_wrapper.Kubernetes(network_administration.setup_network())
 k8.deploy(conf.deployment)
@@ -20,7 +21,7 @@ while True:
         chaos_monkey.delete_link(k8.graph)
     # periodically repair the network
     if time % 5 == 0:
-        network_administration.repair_network(k8.graph)
+        network_administration.repair_network(k8.graph, time)
         k8.scheduler.optimize(k8.graph)
     time += 1
     print(f"{__name__}: Time: {time}")
