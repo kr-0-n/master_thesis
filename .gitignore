@@ -1,5 +1,6 @@
 # we don't like pdf
 *.pdf
 # who even needs cache?
-simulator/__pycache__
+simulator/simmath/__pycache__
 simulator/k8/__pycache__
+

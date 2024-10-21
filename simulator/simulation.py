@@ -15,8 +15,10 @@ while True:
     if rnd.random() < 0.1:
         if len([node for node in k8.graph.nodes if k8.graph.nodes[node]["type"] == "node"]) > 1:
             chaos_monkey.delete_node(k8.graph)
+            pass
     if rnd.random() < 0.1:
         chaos_monkey.delete_pod(k8.graph)
+        pass
     if rnd.random() < 0.1:
         chaos_monkey.delete_link(k8.graph)
     # periodically repair the network
@@ -25,3 +27,4 @@ while True:
         k8.scheduler.optimize(k8.graph)
     time += 1
     print(f"{__name__}: Time: {time}")
+

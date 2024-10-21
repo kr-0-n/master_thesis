@@ -30,7 +30,11 @@ def network_penalty(graph, debug=False):
                     if debug: print(f"Pod {pod} wants to connect to unscheduled Pod {connection[0]}!")
                     continue
                 end = list(graph.neighbors(connection[0]))[0]
-                shortest_path = nx.shortest_path(graph, start, end, "latency")
+                try:
+                    shortest_path = nx.shortest_path(graph, start, end, "latency")
+                except nx.NetworkXNoPath:
+                    if debug: print(f"Pod {pod} wants to connect to unscheduled Pod {connection[0]}!")
+                    continue
                 
                 if debug: print(shortest_path)
 
