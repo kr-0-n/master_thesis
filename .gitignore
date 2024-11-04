@@ -4,3 +4,6 @@
 simulator/__pycache__
 simulator/k8/__pycache__/*
 simulator/k8/__pycache__/algorithm.cpython-312.pyc
+simulator/simmath/__pycache__
+simulator/k8/__pycache__
+
