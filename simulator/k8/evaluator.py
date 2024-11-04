@@ -3,7 +3,7 @@ import networkx as nx
 from simmath.LinearFunction import LinearFunction
 from simmath.maxplus import multiply, devide
 from simmath.minplus import min
-from time_singleton import TimeSingleton
+import Time as time
 import network_administration
 def network_penalty(graph, debug=False):
     val = 0
@@ -83,7 +83,6 @@ def resources_penalty(graph, debug=False):
     return val
 
 def node_stability_penalty(graph, debug=False):
-    time = TimeSingleton().time
     stability_penalty = 10
     floating_average_window = 10
     for node in (node for node in graph.nodes if graph.nodes[node]["type"] == "node"):
@@ -93,7 +92,7 @@ def node_stability_penalty(graph, debug=False):
         else: 
             crashes = 0
             for crash in network_administration.node_failures[node]:
-                if time - crash <= floating_average_window: crashes += 1
+                if time.current_time_step() - crash <= floating_average_window: crashes += 1
             floating_average_of_crashes = crashes / floating_average_window
             if debug: print(f"node {node} has {amount_of_assigned_pods} pods assigned and has a floating average of {crashes} crashes")
         

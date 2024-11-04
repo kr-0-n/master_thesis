@@ -2,10 +2,10 @@ import networkx as nx
 import conf
 from simmath.LinearFunction import LinearFunction
 from metrics import create_metric
+import Time as time
 
 graph = None
 node_failures = {} # syntax: {node: [time_of_failure]}
-node_online_metric = create_metric("nodes_online")
 
 
 def setup_network():
@@ -25,14 +25,13 @@ def setup_network():
     graph = G
     return G
 
-def repair_network(graph: nx.Graph, time):
-    node_online_metric.set(len(graph.nodes))
+def repair_network(graph: nx.Graph):
     # First check nodes
     for node in conf.simple_graph['nodes']:
         if node[0] not in graph.nodes:
             print(f"{__name__}: Node {node[0]} offline")
             if not node[0] in node_failures: node_failures[node[0]] = []
-            node_failures[node[0]].append(time)
+            node_failures[node[0]].append(time.current_time_step())
             graph.add_node(node[0], **node[1])
             print(f"{__name__}: Node {node[0]} back online")
     # Then check edges

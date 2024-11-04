@@ -1,23 +1,16 @@
 version: '3.8'
 services:
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml  # Mount the Prometheus configuration file
-    network_mode: host  # Connect to host network
-    restart: unless-stopped
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
+  db:
+    image: "mysql:latest"
+    ports:
+      - "3306:3306"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin  # Set a default password for Grafana
-      - GF_SECURITY_ADMIN_USER=admin
-    network_mode: host  # Connect to host network
-    restart: unless-stopped
-    volumes:
-      - grafana-storage:/var/lib/grafana  # Persist Grafana data
-
-volumes:
-  grafana-storage:  # Volume for persisting Grafana data
+      MYSQL_ROOT_PASSWORD: root
+  adminer:
+    image: "adminer:latest"
+    ports:
+      - "8080:8080"
+  grafana:
+    image: "grafana/grafana:latest"
+    ports:
+      - "3000:3000"

@@ -1,25 +1,52 @@
-from prometheus_client import start_http_server, Gauge
 import random
-import time
+import Time as time
+import mysql.connector
 
-def update_metrics():
+database_connection=None
+database_cursor=None
+name=None
+def update_metric(metric, value):
     """
-    Update example metrics with new values.
+    Update metrics with new values.
     """
-    # Generate a random value and set it to the gauge
-    random_value = random.uniform(0, 100)
-    example_metric.set(random_value)
-    print(f"Updated metric with random value: {random_value:.2f}")
+    global database_connection
+    global database_cursor
+    print(time)
+    database_cursor.execute(f"INSERT INTO {metric} (time, {metric}) VALUES (\"{time.current_time().strftime('%Y-%m-%d %H:%M:%S')}\", {value});")
+    print(f"updated {metric} with {value}")
+    database_connection.commit()
 
-def create_metric(id):
+def create_metric(metric):
     """
     Create a new metric with the given id.
     """
-    return Gauge(
-        id,
-        f"A gauge metric with id ${id}",
-    )   
+    global database_connection
+    global database_cursor
+    database_cursor.execute(f"CREATE TABLE {metric} (time DATETIME NOT NULL, {metric} FLOAT);")
+    database_connection.commit()
+     
 
-def start_server():
-    start_http_server(8000)
-    print("Metrics Server started on port 8000")
+def initialize():
+    global name
+    name = f"k8_simulation_{random.randint(1000,9999)}"    
+    print(name)
+    mydb = mysql.connector.connect(
+        host="127.0.0.1",
+        user="root",
+        password="root",
+
+    )
+    mycursor = mydb.cursor(buffered=True)
+    mycursor.execute(f"CREATE DATABASE {name}")
+
+
+    global database_connection
+    global database_cursor
+
+    database_connection = mysql.connector.connect(
+        host="127.0.0.1",
+        user="root",
+        password="root",
+        database=name
+    )
+    database_cursor = database_connection.cursor()
