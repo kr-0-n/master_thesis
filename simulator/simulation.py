@@ -3,11 +3,14 @@ import chaos_monkey
 import conf
 import random as rnd
 import network_administration
+import metrics
 
 rnd.seed(1234)
 time = 0
+metrics.start_server()
 k8 = kubernetes_wrapper.Kubernetes(network_administration.setup_network())
 k8.deploy(conf.deployment)
+
 
 while True:
     k8.tick(time)
