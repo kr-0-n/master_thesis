@@ -104,7 +104,6 @@ def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
 
 
     initial_unassigned = graph.copy()
-    initial_unassigned.add_node(pod[0], **pod[1])
 
     # connect new pod to the same node as its wanted connection pod
     first_solution = graph.copy()
@@ -150,7 +149,29 @@ def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
             print(f"Generation {generation}: {survivors}")
     print(f"checked {generations * chilren_per_parent * survivors_per_generation} combinations")
     return current_best[1]
-
+def generate_neighbour_states(graph):
+    """
+    Generate a list of neighbor states by removing an existing edge from the graph and adding a new edge connecting a node to the pod.
+    Parameters:
+        graph (nx.Graph): The graph object representing the problem.
+    Returns:
+        list: A list of neighbor states represented as new graphs. Each neighbor state is a graph object with the same nodes as the original graph but with a different edge connecting a node to the pod.
+    Description:
+        This function takes a graph object as input and generates a list of neighbor states. A neighbor state is a graph object with the same nodes as the original graph but with a different edge connecting a node to the pod. The function iterates over the pods in the graph and for each pod, it iterates over the nodes in the graph. For each pod-node pair, it creates a new graph by copying the original graph and removes the existing edge connecting the pod to a neighbor node. It then adds a new edge connecting the node to the pod. The new graph is appended to the list of neighbor states.
+    Note:
+        The function assumes that the graph is a NetworkX graph object and that the pods and nodes have the "type" attribute set to "pod" and "node", respectively.
+    """
+    set_of_nodes = list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")
+    set_of_pods = list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod")
+    solutions = []
+    for pod_id in set_of_pods:
+        pod = graph.nodes[pod_id]
+        for node in set_of_nodes:
+            new_graph = graph.copy()
+            new_graph.remove_edge(pod_id, list(graph.neighbors(pod_id))[0])
+            new_graph.add_edge(node, pod_id, type="assign")
+            solutions.append(new_graph)
+    return solutions
 def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
     """
     Solves a graph problem using the Ant Colony Algorithm.
@@ -182,30 +203,7 @@ def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
     for i in range(amount_of_ants):
         ant_solution_graph.add_node(i, type="ant", color='green')
         ant_solution_graph.add_edge(i,root_node, type="sits")
-
-    def generate_neighbour_states(graph):
-        """
-        Generate a list of neighbor states by removing an existing edge from the graph and adding a new edge connecting a node to the pod.
-        Parameters:
-            graph (nx.Graph): The graph object representing the problem.
-        Returns:
-            list: A list of neighbor states represented as new graphs. Each neighbor state is a graph object with the same nodes as the original graph but with a different edge connecting a node to the pod.
-        Description:
-            This function takes a graph object as input and generates a list of neighbor states. A neighbor state is a graph object with the same nodes as the original graph but with a different edge connecting a node to the pod. The function iterates over the pods in the graph and for each pod, it iterates over the nodes in the graph. For each pod-node pair, it creates a new graph by copying the original graph and removes the existing edge connecting the pod to a neighbor node. It then adds a new edge connecting the node to the pod. The new graph is appended to the list of neighbor states.
-        Note:
-            The function assumes that the graph is a NetworkX graph object and that the pods and nodes have the "type" attribute set to "pod" and "node", respectively.
-        """
-        set_of_nodes = list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")
-        set_of_pods = list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod")
-        solutions = []
-        for pod_id in set_of_pods:
-            pod = graph.nodes[pod_id]
-            for node in set_of_nodes:
-                new_graph = graph.copy()
-                new_graph.remove_edge(pod_id, list(graph.neighbors(pod_id))[0])
-                new_graph.add_edge(node, pod_id, type="assign")
-                solutions.append(new_graph)
-        return solutions
+    
     def move_ant(ant):
         assert len(list(ant_solution_graph.out_edges(ant))) == 1
         ant_solution_graph.remove_edge(ant,list(ant_solution_graph.out_edges(ant))[0][1])
@@ -301,7 +299,48 @@ def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
         draw_ant_graph()
     return solution_list[0][1]
 
-def simulated_annealing_solve(pod, graph, debug=False, visualize=False):
+def simulated_annealing_solve(graph, pod=None, debug=False, visualize=True):
+    max_iterations = 100
+    initial_temperature = 100
+    cooling_rate = 0.9
+
+    if pod == None:
+        first_solution = graph.copy()
+    else:
+        first_solution = random(graph.copy(), pod, debug=debug, visualize=visualize)
+    current_solution = first_solution
+    current_value = evaluate_step(graph, current_solution)
+    best_solution = current_solution
+    best_value = current_value
+    temperature = initial_temperature
+
+    for i in range(max_iterations):
+        if temperature <= 0:
+            break
+
+        new_solution = rnd.choice(generate_neighbour_states(current_solution))
+        new_value = evaluate_step(graph, new_solution)
+
+        delta_value = new_value - current_value
+        if delta_value < 0: # new solution is better
+            current_solution = new_solution
+            current_value = new_value
+
+            if current_value < best_value:
+                best_solution = current_solution
+                best_value = current_value
+        else: # new solution is worse
+            acceptance_probability = math.exp(-delta_value / temperature)
+            if rnd.random() < acceptance_probability:
+                current_solution = new_solution
+                current_value = new_value
+
+        temperature *= cooling_rate
+    return best_solution
+        
+    
+
+def plot_simulated_anealnealing_solution_space(solution):
     #add node to graph
     graph.add_node(pod[0], **pod[1])
     #try all node-pod connections
@@ -369,7 +408,7 @@ def simulated_annealing_solve(pod, graph, debug=False, visualize=False):
     # Calculate entropy
     ent = -np.sum(probabilities * np.log2(probabilities))
     print(f'Entropy: {ent:.4f}')
-    if visualize:
+    if True:
         plt.plot(solution_array)
         plt.title("SA")
         # plt.axis('off')

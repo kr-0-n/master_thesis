@@ -3,14 +3,15 @@ import chaos_monkey
 import conf
 import random as rnd
 import network_administration
+from time_singleton import TimeSingleton
 
 rnd.seed(1234)
-time = 0
+time = TimeSingleton()
 k8 = kubernetes_wrapper.Kubernetes(network_administration.setup_network())
 k8.deploy(conf.deployment)
 
 while True:
-    k8.tick(time)
+    k8.tick(time.time)
     # randomely invoke the chaos monkey
     if rnd.random() < 0.1:
         if len([node for node in k8.graph.nodes if k8.graph.nodes[node]["type"] == "node"]) > 1:
@@ -20,8 +21,8 @@ while True:
     if rnd.random() < 0.1:
         chaos_monkey.delete_link(k8.graph)
     # periodically repair the network
-    if time % 5 == 0:
-        network_administration.repair_network(k8.graph, time)
+    if time.time % 5 == 0:
+        network_administration.repair_network(k8.graph, time.time)
         k8.scheduler.optimize(k8.graph)
-    time += 1
-    print(f"{__name__}: Time: {time}")
+    time.tick()
+    print(f"{__name__}: Time: {time.time}")

@@ -8,7 +8,7 @@ import k8.algorithm
 class Kubernetes:
     def __init__(self, network: nx.Graph):
         print(f"{__name__}: Kubernetes initialized")
-        self.algorithm = k8.algorithm.random
+        self.algorithm = k8.algorithm.simulated_annealing_solve
         print(f"{__name__}: using {self.algorithm.__name__} algorithm")
         self.scheduler = scheduler.Scheduler(self.algorithm)
         self.graph = network
@@ -20,7 +20,7 @@ class Kubernetes:
                 if pod[0] not in [node for node in self.graph.nodes if self.graph.nodes[node]["type"] == "pod"]:
                     print(f"{__name__}: Pod {pod[0]} is not running")
                     new_graph = self.scheduler.schedule(pod, self.graph)
-                    visualizer.draw_graph(new_graph, "k8: " + str(evaluate_step(self.graph, new_graph, time, debug=False)))
+                    visualizer.draw_graph(new_graph, "k8: " + str(evaluate_step(self.graph, new_graph, debug=False)))
                     self.graph = new_graph
         return
 

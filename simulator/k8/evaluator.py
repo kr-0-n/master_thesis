@@ -3,6 +3,7 @@ import networkx as nx
 from simmath.LinearFunction import LinearFunction
 from simmath.maxplus import multiply, devide
 from simmath.minplus import min
+from time_singleton import TimeSingleton
 import network_administration
 def network_penalty(graph, debug=False):
     val = 0
@@ -77,8 +78,8 @@ def resources_penalty(graph, debug=False):
                 print(f"node {node}: cpu {cpu_load}/{graph.nodes[node]['cpu']} | mem {mem_load}/{graph.nodes[node]['mem']}")
     return val
 
-def node_stability_penalty(graph, time, debug=True):
-    debug=True
+def node_stability_penalty(graph, debug=False):
+    time = TimeSingleton().time
     stability_penalty = 10
     floating_average_window = 10
     for node in (node for node in graph.nodes if graph.nodes[node]["type"] == "node"):
@@ -99,7 +100,7 @@ def spread_penalty(graph, debug=False):
     val = 0
     return val
 
-def evaluate(graph, time, debug=False):
+def evaluate(graph, debug=False):
     # Remove all wanted connections (they are unwanted)
     graph.remove_edges_from((edge for edge in graph.edges if graph.edges[edge]["type"] == "wanted_connection"))
     
@@ -107,13 +108,13 @@ def evaluate(graph, time, debug=False):
     val = 0
     val += resources_penalty(graph, debug)
     val += network_penalty(graph, debug)
-    val += node_stability_penalty(graph, debug, time)
+    val += node_stability_penalty(graph, debug)
     val += spread_penalty(graph, debug)
     if debug:print(f"Evaluation: {round(val, 2)}")
     return round(val, 2)
 
-def evaluate_step(old_graph, new_graph, time, debug=False):
-    val = evaluate(new_graph, False, time)
+def evaluate_step(old_graph, new_graph, debug=False):
+    val = evaluate(new_graph, False)
     # check if a pod moved to a new node in the new graph
     # get all 'assign' connections in both graphs and compare them
     old_assignments = []

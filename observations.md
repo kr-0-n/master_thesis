@@ -20,3 +20,7 @@ should it only solve every step perfectly or the entire time? (would need knowle
 
 # Evolutionary solve
 Performs worse in some scenarios with this heuristic - early pods occupy a node and pods with stronger network requirements now have to go to a suboptimal node
+
+---------------------------
+
+For now we only have constant rates of transmission in interpod communication - Can support bursts later
