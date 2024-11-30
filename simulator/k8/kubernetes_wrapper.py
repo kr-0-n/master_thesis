@@ -17,24 +17,25 @@ class Kubernetes:
         create_metric('evaluation')
         create_metric('nodes_online')
         create_metric('pods_online')
-
+        create_metric('links_online')
 
 
     def tick(self):
         if self.current_deployment is not None:
+            nodes_online_count = len([node for node in self.graph.nodes if self.graph.nodes[node]["type"] == "node"])
+            update_metric('nodes_online', nodes_online_count)
+            pods_online_count = len([node for node in self.graph.nodes if self.graph.nodes[node]["type"] == "pod"])
+            update_metric('pods_online', pods_online_count)
+            links_online_count = len([edge for edge in self.graph.edges if self.graph.edges[edge]["type"] == "connection"])
+            update_metric('links_online', links_online_count)
             # check if all pods from the deployment are running
             for pod in self.current_deployment['pods']:
                 if pod[0] not in [node for node in self.graph.nodes if self.graph.nodes[node]["type"] == "pod"]:
                     print(f"{__name__}: Pod {pod[0]} is not running")
                     new_graph = self.scheduler.schedule(pod, self.graph)
                     evaluation = evaluate_step(self.graph, new_graph, debug=False)
-                    
                     update_metric('evaluation', evaluation)
-                    nodes_online_count = len([node for node in self.graph.nodes if self.graph.nodes[node]["type"] == "node"])
-                    update_metric('nodes_online', nodes_online_count)
-                    pods_online_count = len([node for node in self.graph.nodes if self.graph.nodes[node]["type"] == "pod"])
-                    update_metric('pods_online', pods_online_count)
-                    visualizer.draw_graph(new_graph, "k8: " + str(evaluation))
+                    # visualizer.draw_graph(new_graph, "k8: " + str(evaluation))
                     self.graph = new_graph
         return
 

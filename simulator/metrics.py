@@ -11,9 +11,8 @@ def update_metric(metric, value):
     """
     global database_connection
     global database_cursor
-    print(time)
     database_cursor.execute(f"INSERT INTO {metric} (time, {metric}) VALUES (\"{time.current_time().strftime('%Y-%m-%d %H:%M:%S')}\", {value});")
-    print(f"updated {metric} with {value}")
+    # print(f"updated {metric} with {value}")
     database_connection.commit()
 
 def create_metric(metric):

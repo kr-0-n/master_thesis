@@ -28,7 +28,7 @@ def delete_pod(graph):
 
 def delete_link(graph):
     available_links = list(link for link in graph.edges if "type" in graph.edges[link] and graph.edges[link]["type"] == "connection")
-    print(f"{__name__}: Available Connections: {available_links}")
+    # print(f"{__name__}: Available Connections: {available_links}")
     if len(available_links) == 0:
         return graph
     link = rnd.choice(available_links)
