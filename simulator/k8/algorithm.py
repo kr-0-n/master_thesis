@@ -29,6 +29,17 @@ def random(graph: nx.Graph, pod=None, debug=False, visualize=False):
     update_metric("num_eval_func_calls", 0)
     return graph
 
+def assign_pods_to_nodes(nodes, pods):
+    # Generate all possible assignments (with repetition) of pods to nodes
+    assignments = list(itertools.product(nodes, repeat=len(pods)))
+
+    # Pair the pods with their corresponding node assignments
+    result = []
+    for assignment in assignments:
+        result.append(list(zip(pods, assignment)))
+
+    return result
+
 def perfect_solve(graph, pod=None, debug=False, visualize=False):
     """
     A function that adds a node to the graph and tries all possible connections.
@@ -41,20 +52,18 @@ def perfect_solve(graph, pod=None, debug=False, visualize=False):
     #try all node-pod connections
     set_of_nodes = list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")
     set_of_pods = list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod")
-    assignments = list(itertools.product(set_of_nodes, set_of_pods))
-    solutions_checked = 0
-    if debug:
-        print(assignments)
-    combinations = list(itertools.combinations(assignments, len(set_of_pods)))
-    if debug:
-        print(combinations)
     
+    assignments = assign_pods_to_nodes( set_of_nodes, set_of_pods)
+    # print(assignments)
+    solutions_checked = 0
+ 
     current_best = (evaluate(graph), graph)
-    for combination in combinations:
+    print(f"now checking {len(assignments)} assginments")
+    for combination in assignments:
         solutions_checked += 1
         # create new graph
         new_graph = graph.copy()
-        # remove all assignments
+        # remove all assignmentscalc
         new_graph.remove_edges_from((edge for edge in new_graph.edges if new_graph.edges[edge]["type"] == "assign"))
         assigned_pods = []
         valid=True
@@ -62,32 +71,24 @@ def perfect_solve(graph, pod=None, debug=False, visualize=False):
             print("#"*50)
             print(f"combination: {combination}")
         for assignment in combination:
+            new_graph.add_edge(assignment[1], assignment[0], type="assign")
+        
+        evaluation = evaluate_step(graph, new_graph, debug=False)
+        if evaluation < current_best[0]:
+            current_best = (evaluation, new_graph)
+            if visualize:
+                draw_graph(new_graph, conf.simple_graph, "Evaluation: " + str(evaluation))
             if debug:
-                print(f"assignment: {assignments}")
-            if assignment[1] in assigned_pods:
-                valid=False
-                break
-            else:
-                assigned_pods.append(assignment[1])
-                new_graph.add_edge(assignment[1], assignment[0], type="assign")
-        if valid:
-            evaluation = evaluate_step(graph, new_graph, debug=debug)
-            if evaluation < current_best[0]:
-                current_best = (evaluation, new_graph)
-                if visualize:
-                    draw_graph(new_graph, conf.simple_graph, "Evaluation: " + str(evaluation))
-                if debug:
-                    print(f"new best: {current_best[0]}")
-                if evaluation == 0:
-                    print(f"checked {solutions_checked} combinations")
-                    update_metric("num_eval_func_calls", solutions_checked)
-                    return current_best[1]
-            else:
-                if debug:
-                    print(f"evaluation: {evaluation}")
+                print(f"new best: {current_best[0]}")
+            if evaluation == 0:
+                print(f"checked {solutions_checked} combinations")
+                update_metric("num_eval_func_calls", solutions_checked)
+                return current_best[1]
         else:
             if debug:
-                print("invalid combination")
+                print(f"evaluation: {evaluation}")
+
+    print(f"checked {solutions_checked} combinations")
     update_metric("num_eval_func_calls", solutions_checked)
     return current_best[1]
 

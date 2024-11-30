@@ -36,9 +36,10 @@ class Kubernetes:
                     new_graph = self.scheduler.schedule(pod, self.graph)
                     evaluation = evaluate_step(self.graph, new_graph, debug=False)
                     update_metric('evaluation', evaluation)
+                
                     # visualizer.draw_graph(new_graph, "k8: " + str(evaluation))
                     self.graph = new_graph
-        return
+        return  
 
     def deploy(self, deployment):
         self.current_deployment = deployment
