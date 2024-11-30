@@ -7,6 +7,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import math
 import numpy as np
+from metrics import update_metric
 
 def random(graph: nx.Graph, pod=None, debug=False, visualize=False):
     """
@@ -25,6 +26,7 @@ def random(graph: nx.Graph, pod=None, debug=False, visualize=False):
     #attach new node to random existing node
     graph.add_edge(rnd.choice(list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")), pod[0], type="assign")
     #graph.add_edge(1 , node[0])
+    update_metric("num_eval_func_calls", 0)
     return graph
 
 def perfect_solve(graph, pod=None, debug=False, visualize=False):
@@ -78,6 +80,7 @@ def perfect_solve(graph, pod=None, debug=False, visualize=False):
                     print(f"new best: {current_best[0]}")
                 if evaluation == 0:
                     print(f"checked {solutions_checked} combinations")
+                    update_metric("num_eval_func_calls", solutions_checked)
                     return current_best[1]
             else:
                 if debug:
@@ -85,7 +88,7 @@ def perfect_solve(graph, pod=None, debug=False, visualize=False):
         else:
             if debug:
                 print("invalid combination")
-
+    update_metric("num_eval_func_calls", solutions_checked)
     return current_best[1]
 
 def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
@@ -139,7 +142,7 @@ def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
                 pod = (pod, current_graph.nodes[pod])
                 current_graph.remove_node(pod[0])
                 current_graph = random(current_graph, pod, debug=debug, visualize=visualize)
-                children.append((evaluate_step(graph, current_graph, debug=True), current_graph))
+                children.append((evaluate_step(graph, current_graph, debug=False), current_graph))
         children.sort(key=lambda x: x[0])
         survivors = children[:survivors_per_generation]
         if survivors[0][0] < current_best[0]:
@@ -147,7 +150,8 @@ def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
 
         if debug:
             print(f"Generation {generation}: {survivors}")
-    print(f"checked {generations * chilren_per_parent * survivors_per_generation} combinations")
+    #print(f"checked {generations * chilren_per_parent * survivors_per_generation} combinations")
+    update_metric("num_eval_func_calls", generations * chilren_per_parent * survivors_per_generation)
     return current_best[1]
 def generate_neighbour_states(graph):
     """
@@ -286,6 +290,7 @@ def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
                 if visualize:
                     draw_ant_graph()
                 print(f"considered {len([node for node in ant_solution_graph.nodes if ant_solution_graph.nodes[node]['type'] == 'solution'])} solutions")
+                update_metric("num_eval_func_calls", len([node for node in ant_solution_graph.nodes if ant_solution_graph.nodes[node]['type'] == 'solution']))
                 return perfect_solution
 
         for ant in range(amount_of_ants):
@@ -294,7 +299,8 @@ def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
             # draw_ant_graph()
     solution_list = list(node for node in ant_solution_graph.nodes if ant_solution_graph.nodes[node]["type"] == "solution")
     solution_list = sorted(solution_list, key=lambda x: x[0])
-    print(f"considered {len(solution_list)} solutions")
+    #print(f"considered {len(solution_list)} solutions")
+    update_metric("num_eval_func_calls", len(solution_list))
     if visualize:
         draw_ant_graph()
     return solution_list[0][1]
@@ -336,6 +342,7 @@ def simulated_annealing_solve(graph, pod=None, debug=False, visualize=True):
                 current_value = new_value
 
         temperature *= cooling_rate
+    update_metric("num_eval_func_calls", max_iterations)
     return best_solution
         
     

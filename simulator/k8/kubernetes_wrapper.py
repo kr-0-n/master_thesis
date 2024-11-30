@@ -10,7 +10,7 @@ from metrics import update_metric
 class Kubernetes:
     def __init__(self, network: nx.Graph):
         print(f"{__name__}: Kubernetes initialized")
-        self.algorithm = k8.algorithm.simulated_annealing_solve
+        self.algorithm = k8.algorithm.perfect_solve
         print(f"{__name__}: using {self.algorithm.__name__} algorithm")
         self.scheduler = scheduler.Scheduler(self.algorithm)
         self.graph = network
@@ -18,6 +18,7 @@ class Kubernetes:
         create_metric('nodes_online')
         create_metric('pods_online')
         create_metric('links_online')
+        create_metric('num_eval_func_calls')
 
 
     def tick(self):

@@ -5,6 +5,7 @@ from simmath.maxplus import multiply, devide
 from simmath.minplus import min
 import Time as time
 import network_administration
+
 def network_penalty(graph, debug=False):
     val = 0
     unconnected_pod_penalty = 1000

@@ -25,9 +25,9 @@ def create_metric(metric):
     database_connection.commit()
      
 
-def initialize():
+def initialize(algorithm_name: str):
     global name
-    name = f"k8_simulation_{random.randint(1000,9999)}"    
+    name = f"k8_simulation_{random.randint(1000,9999)}_{algorithm_name}"    
     print(name)
     mydb = mysql.connector.connect(
         host="127.0.0.1",
