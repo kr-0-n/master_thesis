@@ -1,0 +1,5 @@
+---
+plugin: cloud.terraform.terraform_provider
+project_path: /home/kron/uni/master_thesis/k8_deployment
+# Terraform binary (available in the $PATH) or full path to the binary.
+binary_path: /usr/bin/terraform
