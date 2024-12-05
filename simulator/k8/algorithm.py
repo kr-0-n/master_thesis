@@ -58,7 +58,7 @@ def perfect_solve(graph, pod=None, debug=False, visualize=False):
     solutions_checked = 0
  
     current_best = (evaluate(graph), graph)
-    print(f"now checking {len(assignments)} assginments")
+    print(f"now checking {len(set_of_nodes)} ^ {len(set_of_pods)} assginments")
     for combination in assignments:
         solutions_checked += 1
         # create new graph
