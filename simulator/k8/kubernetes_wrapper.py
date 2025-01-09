@@ -3,14 +3,13 @@ import networkx as nx
 import k8.scheduler as scheduler 
 from k8.evaluator import evaluate_step
 import visualizer
-import k8.algorithm
 from metrics import create_metric
 from metrics import update_metric
 
 class Kubernetes:
-    def __init__(self, network: nx.Graph):
+    def __init__(self, network: nx.Graph, algorithm):
         print(f"{__name__}: Kubernetes initialized")
-        self.algorithm = k8.algorithm.ant_colony_solve
+        self.algorithm = algorithm
         print(f"{__name__}: using {self.algorithm.__name__} algorithm")
         self.scheduler = scheduler.Scheduler(self.algorithm)
         self.graph = network

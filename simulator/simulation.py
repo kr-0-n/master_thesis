@@ -7,11 +7,11 @@ import metrics
 import Time as time
 
 rnd = Random()
-rnd.seed(43)
+rnd.seed(conf.random_seed)
 
-metrics.initialize("aco")
+metrics.initialize(conf.metrics_name_postfix)
 print("metrics initialized")
-k8 = kubernetes_wrapper.Kubernetes(network_administration.setup_network())
+k8 = kubernetes_wrapper.Kubernetes(network_administration.setup_network(), conf.algorithm)
 k8.deploy(conf.deployment)
 
 while time.current_time_step() < 1440:

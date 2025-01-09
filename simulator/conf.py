@@ -1,4 +1,4 @@
-
+from k8.algorithm import *
 def get_node_node(id):
     return (id, {"type": "node", "color": "lightblue", "shape": "s"})
 # Start with index 1. Index 0 is the nonexistent node
@@ -20,3 +20,7 @@ deployment = {
              (10, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(5,3,3)]}),
              (11, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(9,5,3)]})],
 }
+
+algorithm = evolutionary_solve
+metrics_name_postfix = "evolutionary_solve"
+random_seed = 1
