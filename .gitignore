@@ -1,4 +1,10 @@
 # we don't like pdf
 *.pdf
 # who even needs cache?
-**/__pycache__**
+**__pycache__**
+k8_deployment/keystone_rc.sh
+.terraform*
+
+# no local docker data
+simulator/deploy/grafana_data
+simulator/deploy/sql_data
