@@ -5,12 +5,15 @@ from simmath.maxplus import multiply, devide
 from simmath.minplus import min
 import Time as time
 import network_administration
+import conf
+import metrics
 
 def network_penalty(graph, debug=False):
     val = 0
-    unconnected_pod_penalty = 1000
-    latency_penalty = 1
-    throughput_penalty = 10
+    unconnected_pod_penalty = conf.unconnected_pod_penalty
+    latency_penalty = conf.latency_penalty
+    throughput_penalty = conf.throughput_penalty
+
 
     # Clean the input functions on the graph
     for edge in (edge for edge in graph.edges if graph.edges[edge].get("type") == "connection"):
@@ -84,8 +87,8 @@ def resources_penalty(graph, debug=False):
     return val
 
 def node_stability_penalty(graph, debug=False):
-    stability_penalty = 10
-    floating_average_window = 10
+    stability_penalty = conf.stability_penalty
+    floating_average_window = conf.floating_average_window
     for node in (node for node in graph.nodes if graph.nodes[node]["type"] == "node"):
         amount_of_assigned_pods = len(list(pod for pod in list(graph.neighbors(node)) if graph.nodes[pod]["type"] == "pod"))
         floating_average_of_crashes = 0
@@ -111,7 +114,9 @@ def evaluate(graph, debug=False):
     if debug: print("-"*50)
     val = 0
     val += resources_penalty(graph, debug)
-    val += network_penalty(graph, debug)
+    net_pen = network_penalty(graph, debug)
+    metrics.update_metric('network_penalty', net_pen)
+    #val += net_pen
     val += node_stability_penalty(graph, debug)
     val += spread_penalty(graph, debug)
     if debug:print(f"Evaluation: {round(val, 2)}")
@@ -121,6 +126,7 @@ def evaluate_step(old_graph, new_graph, debug=False):
     val = evaluate(new_graph, False)
     # check if a pod moved to a new node in the new graph
     # get all 'assign' connections in both graphs and compare them
+    move_pod_penalty = conf.move_pod_penalty
     old_assignments = []
     new_assignments = []
     for edge in old_graph.edges:
@@ -134,6 +140,6 @@ def evaluate_step(old_graph, new_graph, debug=False):
         print(f"New assignments: {new_assignments}")
     for assignment in old_assignments:
         if assignment not in new_assignments:
-            val += 100
+            val += move_pod_penalty
     if debug:print(f"Evaluation: {round(val, 2)}")
     return round(val, 2)

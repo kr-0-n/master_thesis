@@ -21,6 +21,16 @@ deployment = {
              (11, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(9,5,3)]})],
 }
 
-algorithm = evolutionary_solve
-metrics_name_postfix = "evolutionary_solve"
+algorithm = simulated_annealing_solve
+metrics_name_postfix = "simulated_annealing_no_net_pen"
 random_seed = 1
+
+# Penalties
+move_pod_penalty = 100
+unconnected_pod_penalty = 1000
+latency_penalty = 1
+throughput_penalty = 10 # calculated like this: penalty = throughput_penalty * (wanted_throughput - actual_throughput)
+
+# Stability is calculated like this: penalty = stability_penalty * floating_average_of_crashes
+stability_penalty = 10
+floating_average_window = 10

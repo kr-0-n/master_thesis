@@ -18,6 +18,7 @@ class Kubernetes:
         create_metric('pods_online')
         create_metric('links_online')
         create_metric('num_eval_func_calls')
+        create_metric('network_penalty')
 
 
     def tick(self):
