@@ -21,7 +21,6 @@ class Kubernetes:
 
 
     def tick(self):
-        print(f"{__name__}: tick")
         if self.current_deployment is not None:
             nodes_online_count = len([node for node in self.graph.nodes if self.graph.nodes[node]["type"] == "node"])
             update_metric('nodes_online', nodes_online_count)

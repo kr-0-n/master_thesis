@@ -104,7 +104,7 @@ def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
     """
     generations = 10
     chilren_per_parent = 5
-    survivors_per_generation = 3
+    survivors_per_generation = 5
 
 
     initial_unassigned = graph.copy()
@@ -199,9 +199,9 @@ def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
     ant_solution_graph = nx.DiGraph()
     root_node = (evaluate_step(graph, first_solution, debug=False), first_solution) # syntax for an entry in the ant solution graph: (evaluation, graph)
     ant_solution_graph.add_node(root_node, type="solution", color='blue') 
-    amount_of_ants = 10
-    moves_per_ant = 10
-    pheromone_evaporation = 0.9
+    amount_of_ants = 20
+    moves_per_ant = 5
+    pheromone_evaporation = 0.1
     if debug:
         print(f"ACO configuration: amount_of_ants={amount_of_ants}, moves_per_ant={moves_per_ant}, pheromone_evaporation={pheromone_evaporation}")
     # Add ants to the ant_solution_graph
@@ -307,9 +307,9 @@ def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
     return solution_list[0][1]
 
 def simulated_annealing_solve(graph, pod=None, debug=False, visualize=True):
-    max_iterations = 100
-    initial_temperature = 100
-    cooling_rate = 0.9
+    max_iterations = 150
+    initial_temperature = 1000
+    cooling_rate = 0.1
 
     if pod == None:
         first_solution = graph.copy()

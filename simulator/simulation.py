@@ -9,7 +9,7 @@ import Time as time
 rnd = Random()
 rnd.seed(conf.random_seed)
 
-metrics.initialize(conf.metrics_name_postfix)
+metrics.initialize(conf.metrics_name_postfix, rnd.randint(1000, 9999))
 print("metrics initialized")
 k8 = kubernetes_wrapper.Kubernetes(network_administration.setup_network(), conf.algorithm)
 k8.deploy(conf.deployment)
