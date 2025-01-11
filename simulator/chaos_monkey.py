@@ -1,11 +1,11 @@
-import random as rnd
 import networkx as nx
-
+rnd=None
 """
 The chaos monkey creates chaos by deleting nodes, pods, and links. Beware, they are randomly chosen.
 """
 
 def delete_node(graph: nx.DiGraph):
+    global rnd
     # remove random node and all adjacent assigned pods
     node = rnd.choice(list(node for node in graph.nodes if graph.nodes[node]["type"] == "node"))
     print(f"{__name__}: Deleting node {node}")
@@ -18,6 +18,7 @@ def delete_node(graph: nx.DiGraph):
     return graph
 
 def delete_pod(graph):
+    global rnd
     pod = rnd.choice(list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod"))
     print(f"{__name__}: Deleting pod {pod}")
     graph.remove_node(pod)
@@ -27,6 +28,7 @@ def delete_pod(graph):
     return graph
 
 def delete_link(graph):
+    global rnd
     available_links = list(link for link in graph.edges if "type" in graph.edges[link] and graph.edges[link]["type"] == "connection")
     # print(f"{__name__}: Available Connections: {available_links}")
     if len(available_links) == 0:

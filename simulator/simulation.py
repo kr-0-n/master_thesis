@@ -8,6 +8,7 @@ import Time as time
 
 rnd = Random()
 rnd.seed(conf.random_seed)
+chaos_monkey.rnd = rnd
 
 metrics.initialize(conf.metrics_name_postfix, rnd.randint(1000, 9999))
 print("metrics initialized")

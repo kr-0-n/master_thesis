@@ -98,8 +98,8 @@ medium_deployment = {
 graph = medium_graph
 deployment = medium_deployment
 
-algorithm = simulated_annealing_solve
-metrics_name_postfix = "simulated_annealing"
+algorithm = ant_colony_solve
+metrics_name_postfix = "aco"
 random_seed = 2
 
 # Penalties
