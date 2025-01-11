@@ -116,7 +116,7 @@ def evaluate(graph, debug=False):
     val += resources_penalty(graph, debug)
     net_pen = network_penalty(graph, debug)
     metrics.update_metric('network_penalty', net_pen)
-    #val += net_pen
+    val += net_pen
     val += node_stability_penalty(graph, debug)
     val += spread_penalty(graph, debug)
     if debug:print(f"Evaluation: {round(val, 2)}")

@@ -66,7 +66,6 @@ def perfect_solve(graph, pod=None, debug=False, visualize=False):
         # remove all assignmentscalc
         new_graph.remove_edges_from((edge for edge in new_graph.edges if new_graph.edges[edge]["type"] == "assign"))
         assigned_pods = []
-        valid=True
         if debug:
             print("#"*50)
             print(f"combination: {combination}")
@@ -77,7 +76,7 @@ def perfect_solve(graph, pod=None, debug=False, visualize=False):
         if evaluation < current_best[0]:
             current_best = (evaluation, new_graph)
             if visualize:
-                draw_graph(new_graph, conf.simple_graph, "Evaluation: " + str(evaluation))
+                draw_graph(new_graph, conf.graph, "Evaluation: " + str(evaluation))
             if debug:
                 print(f"new best: {current_best[0]}")
             if evaluation == 0:

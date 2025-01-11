@@ -13,6 +13,7 @@ class Kubernetes:
         print(f"{__name__}: using {self.algorithm.__name__} algorithm")
         self.scheduler = scheduler.Scheduler(self.algorithm)
         self.graph = network
+
         create_metric('evaluation')
         create_metric('nodes_online')
         create_metric('pods_online')
@@ -39,9 +40,10 @@ class Kubernetes:
                     print(f"{__name__}: Evaluation: {evaluation}")
                     update_metric('evaluation', evaluation)
                 
-                    # visualizer.draw_graph(new_graph, "k8: " + str(evaluation))
                     self.graph = new_graph
-        return  
+
+            #visualizer.draw_graph(self.graph, "k8: " )
+        return
 
     def deploy(self, deployment):
         self.current_deployment = deployment
