@@ -5,10 +5,13 @@ import mysql.connector
 database_connection=None
 database_cursor=None
 name=None
+record_metrics=True
 def update_metric(metric, value):
     """
     Update metrics with new values.
     """
+    global record_metrics
+    if not record_metrics: return
     global database_connection
     global database_cursor
     database_cursor.execute(f"INSERT INTO {metric} (time, {metric}) VALUES (\"{time.current_time().strftime('%Y-%m-%d %H:%M:%S')}\", {value});")
@@ -19,6 +22,8 @@ def create_metric(metric):
     """
     Create a new metric with the given id.
     """
+    global record_metrics
+    if not record_metrics: return
     global database_connection
     global database_cursor
     database_cursor.execute(f"CREATE TABLE {metric} (time DATETIME NOT NULL, {metric} FLOAT);")
@@ -26,6 +31,8 @@ def create_metric(metric):
      
 
 def initialize(algorithm_name: str, run: int):
+    global record_metrics
+    if not record_metrics: return    
     global name
     name = f"k8_simulation_{run}_{algorithm_name}"    
     print(name)
