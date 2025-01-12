@@ -3,7 +3,7 @@ def get_node_node(id):
     return (id, {"type": "node", "color": "lightblue", "shape": "s"})
 # Start with index 1. Index 0 is the nonexistent node
 small_graph={
-    "nodes": [(1, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100}),
+    "nodes": [(1, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["SSD"]}),
               (2, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100}),
               (3, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100}),
               (4, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100}),],
@@ -95,8 +95,8 @@ medium_deployment = {
              ],
 }
 
-graph = medium_graph
-deployment = medium_deployment
+graph = small_graph
+deployment = small_deployment
 
 algorithm = ant_colony_solve
 metrics_name_postfix = "aco"
@@ -111,3 +111,11 @@ throughput_penalty = 10 # calculated like this: penalty = throughput_penalty * (
 # Stability is calculated like this: penalty = stability_penalty * floating_average_of_crashes
 stability_penalty = 10
 floating_average_window = 10
+
+
+# Chaos
+# Every time step the chaos monked has a defined chance to delete nodes, pods or links. Define it here
+node_delete_probability = 0.1
+pod_delete_probability = 0.1
+link_delete_probability = 0.1
+
