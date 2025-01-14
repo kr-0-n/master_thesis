@@ -86,6 +86,32 @@ def resources_penalty(graph, debug=False):
                 print(f"node {node}: cpu {cpu_load}/{graph.nodes[node]['cpu']} | mem {mem_load}/{graph.nodes[node]['mem']}")
     return val
 
+def labels_penalty(graph, debug=False):
+    val = 0
+    for pod in (pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod"):
+        if "labelSelector" not in graph.nodes[pod]:
+            if debug: print(f"Pod {pod} has no labelSelector")
+            continue
+        else:
+            labelSelector = graph.nodes[pod]["labelSelector"]
+        # Get the node this pod is assigned to
+        try:
+            node = list(node for node in graph.neighbors(pod) if graph.nodes[node]["type"] == "node")[0]
+        except IndexError:
+            if debug: print(f"Pod {pod} has not been scheduled!")
+            continue
+        # Get the labels of the node
+        if "labels" not in graph.nodes[node]:
+            if debug: print(f"Node {node} has no labels")
+            labels = []
+        else:
+            labels = graph.nodes[node]["labels"]
+        for label in labelSelector:
+            if label not in labels:
+                val += conf.label_penalty
+        
+    return val
+
 def node_stability_penalty(graph, debug=False):
     stability_penalty = conf.stability_penalty
     floating_average_window = conf.floating_average_window
@@ -117,6 +143,7 @@ def evaluate(graph, debug=False):
     net_pen = network_penalty(graph, debug)
     metrics.update_metric('network_penalty', net_pen)
     val += net_pen
+    val += labels_penalty(graph, debug)
     val += node_stability_penalty(graph, debug)
     val += spread_penalty(graph, debug)
     if debug:print(f"Evaluation: {round(val, 2)}")

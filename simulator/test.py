@@ -9,4 +9,4 @@ k8 = Kubernetes(network_administration.setup_network(conf.graph), conf.algorithm
 k8.deploy(conf.deployment)
 k8.tick()
 
-draw_graph(k8.graph, "k8: " )
+draw_graph(k8.graph, "Model Example" )

@@ -31,16 +31,17 @@ class Kubernetes:
             links_online_count = len([edge for edge in self.graph.edges if self.graph.edges[edge]["type"] == "connection"])
             update_metric('links_online', links_online_count)
 
+
             # check if all pods from the deployment are running
-            for pod in self.current_deployment['pods']:
-                if pod[0] not in [node for node in self.graph.nodes if self.graph.nodes[node]["type"] == "pod"]:
-                    print(f"{__name__}: Pod {pod[0]} is not running")
-                    new_graph = self.scheduler.schedule(pod, self.graph)
-                    evaluation = evaluate_step(self.graph, new_graph, debug=False)
-                    print(f"{__name__}: Evaluation: {evaluation}")
-                    update_metric('evaluation', evaluation)
+            pods_to_schedule = [pod for pod in self.current_deployment['pods'] if pod[0] not in [node for node in self.graph.nodes if self.graph.nodes[node]["type"] == "pod"]] 
+            if len(pods_to_schedule) > 0:
+                print(f"{__name__}: Pod(s) {pods_to_schedule} are not running")
+                new_graph = self.scheduler.schedule(pods_to_schedule, self.graph)
+                evaluation = evaluate_step(self.graph, new_graph, debug=False)
+                print(f"{__name__}: Evaluation: {evaluation}")
+                update_metric('evaluation', evaluation)
                 
-                    self.graph = new_graph
+                self.graph = new_graph
 
             #visualizer.draw_graph(self.graph, "k8: " )
         return

@@ -1,4 +1,3 @@
-import random
 import Time as time
 import mysql.connector
 

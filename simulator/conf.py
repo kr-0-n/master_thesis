@@ -54,10 +54,10 @@ small_deployment = {
     "pods": [(5, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(6,3,5)]}), # network syntax: (pod_to, latency, throughput)
              (6, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(7,3,2)]}),
              (7, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(5,3,5)]}),
-             #(8, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(8,3,1)]}),
+             (8, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(8,3,1)]}),
              (9, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(5,3,3)]}),
-             #(10, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(5,3,3)]}),
-             #(11, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(9,5,3)]})
+             (10, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(5,3,3)]}),
+             (11, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(9,5,3)], "labelSelector": ["SSD"]})
              ],
 }
 
@@ -98,13 +98,14 @@ medium_deployment = {
 graph = small_graph
 deployment = small_deployment
 
-algorithm = ant_colony_solve
-metrics_name_postfix = "aco"
-random_seed = 2
+algorithm = evolutionary_solve
+metrics_name_postfix = "perfect_solve"
+random_seed = 14
 
 # Penalties
 move_pod_penalty = 100
 unconnected_pod_penalty = 1000
+label_penalty = 1000
 latency_penalty = 1
 throughput_penalty = 10 # calculated like this: penalty = throughput_penalty * (wanted_throughput - actual_throughput)
 

@@ -6,8 +6,8 @@ import math
 class Scheduler():
     def __init__(self, algorithm):
         self.selected_algorithm = algorithm
-    def schedule(self, pod, graph):
-        return self.selected_algorithm(graph, pod, debug=False, visualize=False)
+    def schedule(self, pods, graph):
+        return self.selected_algorithm(graph, pods, debug=False, visualize=False)
     def optimize(self, graph):
         return self.selected_algorithm(graph, debug=False, visualize=False)
     # # Schedule new

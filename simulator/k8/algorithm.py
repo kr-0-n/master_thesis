@@ -40,15 +40,15 @@ def assign_pods_to_nodes(nodes, pods):
 
     return result
 
-def perfect_solve(graph, pod=None, debug=False, visualize=False):
+def perfect_solve(graph, pods=None, debug=False, visualize=False):
     """
     A function that adds a node to the graph and tries all possible connections.
     Takes input parameters node and graph, with optional debug and visualize flags. 
     Returns the best graph after adding the node and edge.
     """
-    if pod != None:
-        #add node to graph
-        graph.add_node(pod[0], **pod[1])
+    if pods != None:
+        for pod in pods:
+            graph.add_node(pod[0], **pod[1])
     #try all node-pod connections
     set_of_nodes = list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")
     set_of_pods = list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod")
@@ -91,7 +91,7 @@ def perfect_solve(graph, pod=None, debug=False, visualize=False):
     update_metric("num_eval_func_calls", solutions_checked)
     return current_best[1]
 
-def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
+def evolutionary_solve(graph, pods=None, debug=False, visualize=False):
     """
     A function that performs an evolutionary solve on the input graph.
     Parameters:
@@ -110,7 +110,7 @@ def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
 
     # connect new pod to the same node as its wanted connection pod
     first_solution = graph.copy()
-    if pod != None:
+    if pods != None:
         # This is a questionable approach which decreases the performance.
         # # choose random connection from the wanted connections
         # if len(pod[1]["network"]) > 0:
@@ -119,6 +119,7 @@ def evolutionary_solve(graph, pod=None, debug=False, visualize=False):
         #     if connection[0] in first_solution.nodes and connection[1] in first_solution.nodes:
         #         first_solution.add_edge(connection[0], connection[1], type="assign")
         # else:
+        for pod in pods:
             random(first_solution, pod, debug=debug, visualize=visualize)
 
     initial_best = (evaluate_step(initial_unassigned, first_solution, debug=False), first_solution)
@@ -176,7 +177,7 @@ def generate_neighbour_states(graph):
             new_graph.add_edge(node, pod_id, type="assign")
             solutions.append(new_graph)
     return solutions
-def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
+def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
     """
     Solves a graph problem using the Ant Colony Algorithm.
     Args:
@@ -191,10 +192,11 @@ def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
     Note:
         The function assumes that the graph is a NetworkX graph object and that the pod is a tuple representing a pod and its properties.
     """
-    if pod == None:
-        first_solution = graph.copy()
-    else:
-        first_solution = random(graph.copy(), pod, debug=debug, visualize=visualize)
+    first_solution = graph.copy()
+    if pods != None:
+        for pod in pods:
+            print(f"adding pod {pod}")
+            first_solution = random(first_solution, pod, debug=debug, visualize=visualize)
     ant_solution_graph = nx.DiGraph()
     root_node = (evaluate_step(graph, first_solution, debug=False), first_solution) # syntax for an entry in the ant solution graph: (evaluation, graph)
     ant_solution_graph.add_node(root_node, type="solution", color='blue') 
@@ -305,15 +307,16 @@ def ant_colony_solve(graph, pod=None, debug=False, visualize=False):
         draw_ant_graph()
     return solution_list[0][1]
 
-def simulated_annealing_solve(graph, pod=None, debug=False, visualize=True):
+def simulated_annealing_solve(graph, pods=None, debug=False, visualize=True):
     max_iterations = 150
     initial_temperature = 1000
     cooling_rate = 0.1
 
-    if pod == None:
-        first_solution = graph.copy()
-    else:
-        first_solution = random(graph.copy(), pod, debug=debug, visualize=visualize)
+    
+    first_solution = graph.copy()
+    if pods != None:
+        for pod in pods:
+            first_solution = random(first_solution, pod, debug=debug, visualize=visualize)
     current_solution = first_solution
     current_value = evaluate_step(graph, current_solution)
     best_solution = current_solution
