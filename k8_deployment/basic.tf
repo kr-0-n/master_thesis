@@ -39,7 +39,7 @@ resource "openstack_compute_instance_v2" "k8-manager" {
   flavor_name = lookup(var.role_flavor, "manager")
 
   key_pair        = "lorenz_generic"
-  security_groups = ["default", "SSH and ICMP"]
+  security_groups = ["default", "SSH and ICMP", "Kubernetes Control Pane"]
 
   network {
     name = var.network

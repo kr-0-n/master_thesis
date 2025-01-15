@@ -8,3 +8,4 @@ k8_deployment/keystone_rc.sh
 # no local docker data
 simulator/deploy/grafana_data
 simulator/deploy/sql_data
+k8_deployment/k3s.yaml
