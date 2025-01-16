@@ -1,0 +1,14 @@
+[package]
+name = "api_server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tonic = "0.12.3"        # gRPC framework
+prost = "0.13.4"       # Protobuf implementation
+tokio = { version = "1.43.0", features = ["full"] }  # Async runtime for the server
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"   # Optional for JSON support
+
+[build-dependencies]
+tonic-build = "0.12.3"
