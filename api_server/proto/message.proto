@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package links;
+
+message LinkInfoMessage {
+    string from = 1;
+    string to = 2;
+    int32 latency = 3;
+    int32 throughput = 4;
+}
+
+service LinkService {
+    rpc SendData(LinkInfoMessage) returns (LinkInfoMessage);
+}
