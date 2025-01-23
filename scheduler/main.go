@@ -102,9 +102,8 @@ func verifyEdges(graph gograph.Graph[string, *visualizer.Node]) {
 	// Remove all Edges
 	edges, _ := graph.Edges()
 	fmt.Println(edges)
-	for edge, _ := range edges {
-		fmt.Println(edge)
-
+	for _, edge := range edges {
+		graph.RemoveEdge(edge.Source, edge.Target)
 	}
 
 	adjacencyMap, _ := graph.AdjacencyMap()
@@ -116,7 +115,6 @@ func verifyEdges(graph gograph.Graph[string, *visualizer.Node]) {
 			if node.Properties["nodeName"] != "" {
 				adj_node, _ := graph.Vertex(node.Properties["nodeName"])
 				graph.AddEdge(node.Name, adj_node.Name)
-
 			}
 		}
 	}
