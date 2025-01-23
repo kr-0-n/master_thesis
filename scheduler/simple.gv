@@ -1,0 +1,64 @@
+strict graph {
+
+
+	"k8-manager-0" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-manager-0" -- "helm-install-traefik-crd-xjrzh" [  weight=0 ];
+
+	"k8-manager-0" -- "helm-install-traefik-mzgkc" [  weight=0 ];
+
+	"k8-manager-0" -- "local-path-provisioner-5cf85fd84d-q87m4" [  weight=0 ];
+
+	"k8-manager-0" -- "metrics-server-5985cbc9d7-vv7k2" [  weight=0 ];
+
+	"k8-manager-0" -- "svclb-traefik-00916330-gqs6q" [  weight=0 ];
+
+	"k8-manager-0" -- "coredns-ccb96694c-lpz2r" [  weight=0 ];
+
+	"traefik-57b79cf995-zgk9d" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"traefik-57b79cf995-zgk9d" -- "k8-worker-1" [  weight=0 ];
+
+	"helm-install-traefik-mzgkc" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"helm-install-traefik-mzgkc" -- "k8-manager-0" [  weight=0 ];
+
+	"helm-install-traefik-crd-xjrzh" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"helm-install-traefik-crd-xjrzh" -- "k8-manager-0" [  weight=0 ];
+
+	"local-path-provisioner-5cf85fd84d-q87m4" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"local-path-provisioner-5cf85fd84d-q87m4" -- "k8-manager-0" [  weight=0 ];
+
+	"k8-worker-1" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-worker-1" -- "svclb-traefik-00916330-492nx" [  weight=0 ];
+
+	"k8-worker-1" -- "traefik-57b79cf995-zgk9d" [  weight=0 ];
+
+	"coredns-ccb96694c-lpz2r" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"coredns-ccb96694c-lpz2r" -- "k8-manager-0" [  weight=0 ];
+
+	"svclb-traefik-00916330-492nx" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"svclb-traefik-00916330-492nx" -- "k8-worker-1" [  weight=0 ];
+
+	"svclb-traefik-00916330-gqs6q" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"svclb-traefik-00916330-gqs6q" -- "k8-manager-0" [  weight=0 ];
+
+	"svclb-traefik-00916330-n4g6v" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"svclb-traefik-00916330-n4g6v" -- "k8-worker-0" [  weight=0 ];
+
+	"k8-worker-0" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-worker-0" -- "svclb-traefik-00916330-n4g6v" [  weight=0 ];
+
+	"metrics-server-5985cbc9d7-vv7k2" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"metrics-server-5985cbc9d7-vv7k2" -- "k8-manager-0" [  weight=0 ];
+
+}

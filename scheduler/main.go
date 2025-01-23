@@ -1,14 +1,11 @@
 package main
 
 import (
-	"scheduler/visualizer"
-	"github.com/hmdsefi/gograph"
-
-	// "context"
 	"fmt"
+	gograph"github.com/dominikbraun/graph"
+	"scheduler/visualizer"
 
 	corev1 "k8s.io/api/core/v1"
-	// policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
@@ -18,8 +15,9 @@ import (
 )
 
 func main() {
-	graph := gograph.New[*visualizer.Node](gograph.Directed())
-	// graph.AddEdge(gograph.NewVertex(&visualizer.Node{Name: "A", Type: "node", Properties: map[string]string{"property1": "value1", "property2": "value2"}}), gograph.NewVertex(&visualizer.Node{Name: "B", Type: "node", Properties: map[string]string{"property1": "value1", "property2": "value2"}}))
+	graph := gograph.New(func(node *visualizer.Node) string {
+		return node.Name
+	})
 
 	clientset := connectToK8s()
 	node_watchlist := cache.NewListWatchFromClient(clientset.CoreV1().RESTClient(), "nodes", metav1.NamespaceAll, fields.Everything())
@@ -29,7 +27,7 @@ func main() {
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				node := obj.(*corev1.Node)
-				graph.AddVertex(gograph.NewVertex(&visualizer.Node{Name: node.Name, Type: "node", Properties: map[string]string{}}))
+				graph.AddVertex(&visualizer.Node{Name: node.Name, Type: "node", Properties: map[string]string{}}, gograph.VertexAttribute("shape", "rect"), gograph.VertexAttribute("colorscheme", "blues3"), gograph.VertexAttribute("style", "filled"), gograph.VertexAttribute("color", "2"), gograph.VertexAttribute("fillcolor", "1"))
 
 				fmt.Printf("Node added: %v\n", node.Name)
 				verifyEdges(graph)
@@ -56,19 +54,10 @@ func main() {
 			AddFunc: func(obj interface{}) {
 				node := obj.(*corev1.Pod)
 				new_vertex := &visualizer.Node{Name: node.Name, Type: "pod", Properties: map[string]string{"nodeName": node.Spec.NodeName}}
-				graph.AddVertex(gograph.NewVertex(new_vertex))
+				graph.AddVertex(new_vertex, gograph.VertexAttribute("shape", "ellipse"), gograph.VertexAttribute("colorscheme", "greens3"), gograph.VertexAttribute("style", "filled"), gograph.VertexAttribute("color", "2"), gograph.VertexAttribute("fillcolor", "1"))
 				fmt.Println("Pod added:", node.Name)
-				for _, adj_node := range graph.GetAllVertices() {
-					if adj_node.Label().Name == node.Spec.NodeName {
-						edge, err :=graph.AddEdge(adj_node, graph.GetVertexByID(new_vertex))
-					if err != nil {
-						fmt.Println(err)
-					}
-					fmt.Println(edge)
-					}
-				}
 				verifyEdges(graph)
-			
+
 				visualizer.DrawGraph(graph)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
@@ -108,23 +97,27 @@ func connectToK8s() *kubernetes.Clientset {
 	return clientset
 }
 
-func verifyEdges(graph gograph.Graph[*visualizer.Node]) {
+func verifyEdges(graph gograph.Graph[string, *visualizer.Node]) {
+	fmt.Println("Verifying edges")
 	// Remove all Edges
-	for _, edge := range graph.AllEdges() {
-		graph.RemoveEdges(edge)
+	edges, _ := graph.Edges()
+	fmt.Println(edges)
+	for edge, _ := range edges {
+		fmt.Println(edge)
+
 	}
 
-	for _, node := range graph.GetAllVertices() {
-		if node.Label().Type == "pod" {
-			if node.Label().Properties["nodeName"] != "" {
-				for _, adj_node := range graph.GetAllVertices() {
-					if adj_node.Label().Name == node.Label().Properties["nodeName"] {
-						graph.AddEdge(node, adj_node)
+	adjacencyMap, _ := graph.AdjacencyMap()
+	fmt.Println("Adjacency Map:", adjacencyMap)
 
-					}
-				}
+	for vertex := range adjacencyMap {
+		node, _ := graph.Vertex(vertex)
+		if node.Type == "pod" {
+			if node.Properties["nodeName"] != "" {
+				adj_node, _ := graph.Vertex(node.Properties["nodeName"])
+				graph.AddEdge(node.Name, adj_node.Name)
+
 			}
 		}
 	}
 }
-
