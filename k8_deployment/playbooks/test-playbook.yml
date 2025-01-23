@@ -1,0 +1,9 @@
+---
+- name: Test playbook
+  hosts: worker
+  tasks:
+  - name: Install tldr
+    become: true
+    ansible.builtin.apt:
+      name: tldr
+      state: latest
