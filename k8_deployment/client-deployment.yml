@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-deployment
+  name: client-deployment
   labels:
-    app: nginx
+    app: client-server-app
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: nginx
@@ -16,11 +16,12 @@ spec:
     spec:
       schedulerName: custom-scheduler
       containers:
-      - name: nginx
+      - name: client 
         image: nginx:1.21.6
         env:
-        - name: RequireCom
-          value: ""
+          - name: NetworkComRequirements
+            value: '[{"Target": "server-deployment", "Latency": 10, "Throughput": 5}]'
         
         ports:
         - containerPort: 80
+    
