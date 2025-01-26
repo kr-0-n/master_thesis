@@ -1,0 +1,26 @@
+strict digraph {
+
+
+	"k8-worker-1" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"server-deployment-679c8df85c-q2w4s" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"server-deployment-679c8df85c-q2w4s" -> "k8-worker-0" [  weight=0 ];
+
+	"k8-manager-0" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-manager-0" -> "k8-worker-1" [ label="20ms 50mbps", throughput="50", type="connection",  weight=0 ];
+
+	"k8-manager-0" -> "k8-worker-0" [ label="10ms 100mbps", throughput="100", type="connection",  weight=0 ];
+
+	"client-deployment-77cf5f56bb-vjv59" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"client-deployment-77cf5f56bb-vjv59" -> "k8-worker-1" [  weight=0 ];
+
+	"client-deployment-77cf5f56bb-vjv59" -> "server-deployment-679c8df85c-q2w4s" [ color="green", label="10ms 5mbps", latency="10", throughput="5", type="networkComRequirement",  weight=0 ];
+
+	"k8-worker-0" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-worker-0" -> "k8-worker-1" [ label="5ms 200mbps", throughput="200", type="connection",  weight=0 ];
+
+}
