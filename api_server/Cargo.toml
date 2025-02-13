@@ -9,6 +9,7 @@ prost = "0.13.4"       # Protobuf implementation
 tokio = { version = "1.43.0", features = ["full"] }  # Async runtime for the server
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"   # Optional for JSON support
+rusqlite = { version = "0.33.0", features = ["bundled"] }
 
 [build-dependencies]
 tonic-build = "0.12.3"

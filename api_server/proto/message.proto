@@ -8,7 +8,13 @@ message LinkInfoMessage {
     int32 latency = 3;
     int32 throughput = 4;
 }
+message LinkInfoMessageList {
+    repeated LinkInfoMessage links = 1;
+}
+
+message EmptyMessage {}
 
 service LinkService {
-    rpc SendData(LinkInfoMessage) returns (LinkInfoMessage);
+    rpc SendData(LinkInfoMessage) returns (EmptyMessage) {}
+    rpc GetAllLinks(EmptyMessage) returns (LinkInfoMessageList) {}
 }
