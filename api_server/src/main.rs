@@ -78,8 +78,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         [],
     )?;
 
-    let addr = "127.0.0.1:50051".parse()?;
-    let db: Arc<Mutex<Connection>> = Arc::new(Mutex::new(Connection::open("database.db")?));
+    let addr = "0.0.0.0:50051".parse()?;
+    let db: Arc<Mutex<Connection>> = Arc::new(Mutex::new(conn));
 
     // Create the service
     let example_service = MyLinkService { db };
