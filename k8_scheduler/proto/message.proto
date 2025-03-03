@@ -1,0 +1,20 @@
+syntax = "proto3";
+option go_package = "./;proto";
+
+package links;
+message LinkInfoMessage {
+    string from = 1;
+    string to = 2;
+    int32 latency = 3;
+    int32 throughput = 4;
+}
+message LinkInfoMessageList {
+    repeated LinkInfoMessage links = 1;
+}
+
+message EmptyMessage {}
+
+service LinkService {
+    rpc SendData(LinkInfoMessage) returns (EmptyMessage) {}
+    rpc GetAllLinks(EmptyMessage) returns (LinkInfoMessageList) {}
+}

@@ -2,6 +2,9 @@ package common
 
 import (
 	"strconv"
+	"strings"
+
+	"encoding/json"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -18,11 +21,15 @@ func PodToVertex(pod corev1.Pod) *Node {
 		}
 
 	}
-	return &Node{Name: pod.Name, Type: "pod", Properties: map[string]string{"nodeName": pod.Spec.NodeName, "networkComRequirements": networkComString}}
+	json_node_selector, _ := json.Marshal(pod.Spec.NodeSelector)
+	node_selector := string(json_node_selector)
+	return &Node{Name: pod.Name, Type: "pod", Properties: map[string]string{"nodeName": pod.Spec.NodeName, "networkComRequirements": networkComString, "status": string(pod.Status.Phase), "cpu": strconv.FormatFloat(pod.Spec.Containers[0].Resources.Requests.Cpu().AsApproximateFloat64(), 'f', -1, 64), "mem": strconv.Itoa(int(pod.Spec.Containers[0].Resources.Requests.Memory().Value())), "nodeSelector": node_selector}}
 }
 
-func NodeToVertex(node corev1.Node) *Node {
-	return &Node{Name: node.Name, Type: "node", Properties: map[string]string{}}
+func NodeToVertex(node corev1.Node, kind string) *Node {
+	json_labels, _ := json.Marshal(node.Labels)
+	labels := string(json_labels)
+	return &Node{Name: node.Name, Type: kind, Properties: map[string]string{"cpu": strconv.Itoa(int(node.Status.Allocatable.Cpu().Value())), "memory": strconv.Itoa(int(node.Status.Allocatable.Memory().Value())), "labels": labels}}
 }
 
 func VertexAttributes(kind string) []func(*gograph.VertexProperties) {
@@ -34,8 +41,23 @@ func VertexAttributes(kind string) []func(*gograph.VertexProperties) {
 		return []func(*gograph.VertexProperties){
 			gograph.VertexAttribute("shape", "rect"), gograph.VertexAttribute("colorscheme", "blues3"), gograph.VertexAttribute("style", "filled"), gograph.VertexAttribute("color", "2"), gograph.VertexAttribute("fillcolor", "1"),
 		}
+	} else if kind == "offline_node" {
+		return []func(*gograph.VertexProperties){
+			gograph.VertexAttribute("shape", "rect"), gograph.VertexAttribute("colorscheme", "reds3"), gograph.VertexAttribute("style", "filled"), gograph.VertexAttribute("color", "2"), gograph.VertexAttribute("fillcolor", "1"),
+		}
 	}
 	return nil
+}
+
+func RemoveVertex(graph gograph.Graph[string, *Node], vertex string) gograph.Graph[string, *Node] {
+	edges, _ := graph.Edges()
+	for _, edge := range edges {
+		if edge.Source == vertex || edge.Target == vertex {
+			graph.RemoveEdge(edge.Source, edge.Target)
+		}
+	}
+	graph.RemoveVertex(vertex)
+	return graph
 }
 
 func EdgeAttributes(kind string, link Link) []func(*gograph.EdgeProperties) {
@@ -47,11 +69,37 @@ func EdgeAttributes(kind string, link Link) []func(*gograph.EdgeProperties) {
 		return []func(*gograph.EdgeProperties){
 			gograph.EdgeAttribute("type", "connection"), gograph.EdgeAttribute("throughput", strconv.Itoa(link.Throughput)),  gograph.EdgeAttribute("label", strconv.Itoa(link.Latency)+"ms "+strconv.Itoa(link.Throughput)+"mbps"),
 		}
-
+	} else if kind == "offline_connection" {
+		return []func(*gograph.EdgeProperties){
+			gograph.EdgeAttribute("type", "offline_connection"), gograph.EdgeAttribute("throughput", strconv.Itoa(link.Throughput)), gograph.EdgeAttribute("label", strconv.Itoa(link.Latency)+"ms "+strconv.Itoa(link.Throughput)+"mbps"), gograph.EdgeAttribute("style", "dotted"),
+		}
 	} else if kind == "assign" {
 		return []func(*gograph.EdgeProperties){
 			gograph.EdgeAttribute("type", "assign"),
 		}
 	}
 	return nil
+}
+
+func NodesWithPrefix(graph gograph.Graph[string, *Node], prefix string) []string {
+	nodes := []string{}
+	vertices, _ := graph.AdjacencyMap()
+	for vertex := range vertices {
+		node, _ := graph.Vertex(vertex)
+		if strings.HasPrefix(node.Name, prefix) {
+			nodes = append(nodes, node.Name)
+		}
+	}
+	return nodes
+}
+
+// Returns the NodeName a Pod is assigned to in the Graph. Returns "" if not assigned
+func AssignedNode(graph gograph.Graph[string, *Node], podName string) string {
+	edges, _ := graph.Edges()
+	for _, edge := range edges {
+		if edge.Source == podName && edge.Properties.Attributes["type"] == "assign" {
+			return edge.Target
+		}
+	}
+	return ""
 }

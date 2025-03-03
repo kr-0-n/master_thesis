@@ -24,3 +24,12 @@ Performs worse in some scenarios with this heuristic - early pods occupy a node 
 ---------------------------
 
 For now we only have constant rates of transmission in interpod communication - Can support bursts later
+
+
+
+
+
+
+---------------------------------
+Latency still not supported
+When a a client can connect to multiple server? Which path do we penalize?

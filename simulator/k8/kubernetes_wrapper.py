@@ -43,7 +43,7 @@ class Kubernetes:
                 
                 self.graph = new_graph
 
-            #visualizer.draw_graph(self.graph, "k8: " )
+            visualizer.draw_graph(self.graph, "k8: " )
         return
 
     def deploy(self, deployment):

@@ -1,0 +1,287 @@
+package evaluator
+
+import (
+	"k8_scheduler/common"
+	"k8_scheduler/math"
+	"log"
+	"strconv"
+	"time"
+
+	"encoding/json"
+
+	gograph "github.com/dominikbraun/graph"
+)
+
+var UnavailabilityMap = make(map[string][]time.Time)
+
+func EvaluateStep(oldGraph gograph.Graph[string, *common.Node], newGraph gograph.Graph[string, *common.Node], debug bool) float64 {
+	val := Evaluate(newGraph, debug)
+	move_pod_penalty := 1000.0
+	old_assignments := []gograph.Edge[string]{}
+	new_assignments := []gograph.Edge[string]{}
+
+	old_graph_edges, _ := oldGraph.Edges()
+	for _, edge := range old_graph_edges {
+		if edge.Properties.Attributes["type"] == "assign" {
+			old_assignments = append(old_assignments, edge)
+		}
+	}
+
+	new_graph_edges, _ := newGraph.Edges()
+	for _, edge := range new_graph_edges {
+		if edge.Properties.Attributes["type"] == "assign" {
+			new_assignments = append(new_assignments, edge)
+		}
+	}
+	for _, old_edge := range old_assignments {
+		found := false
+		for _, new_edge := range new_assignments {
+			if old_edge.Source == new_edge.Source && old_edge.Target == new_edge.Target {
+				found = true
+			}
+		}
+		if !found {
+			val += move_pod_penalty
+		}
+	}
+	return val
+}
+
+func Evaluate(graph gograph.Graph[string, *common.Node], debug bool) float64 {
+	graph_copy := graph
+	edges, _ := graph_copy.Edges()
+	for _, edge := range edges {
+		if edge.Properties.Attributes["type"] == "networkComRequirement" {
+			graph_copy.RemoveEdge(edge.Source, edge.Target)
+		}
+	}
+	if debug {
+		println("-------New Evaluation-------")
+	}
+	val := 0.0
+
+	val += resources_penalty(graph_copy, debug)
+	val += network_penalty(graph_copy, debug)
+	val += labels_penalty(graph_copy, debug)
+	val += node_stability_penalty(graph_copy, debug)
+	val += spread_penalty(graph_copy, debug)
+
+	if debug {
+		println("Evaluation:", val)
+	}
+
+	return val
+}
+
+func resources_penalty(graph gograph.Graph[string, *common.Node], debug bool) float64 {
+	vertices, _ := graph.AdjacencyMap()
+	val := 0.0
+	for vertex := range vertices {
+		node, _ := graph.Vertex(vertex)
+		if node.Type == "node" {
+			cpu_load := 0.0
+			mem_load := 0
+			edges, _ := graph.Edges()
+			for _, edge := range edges {
+				if edge.Target == node.Name && edge.Properties.Attributes["type"] == "assign" {
+					pod, _ := graph.Vertex(edge.Source)
+					cpu_request, _ := strconv.ParseFloat(pod.Properties["cpu"], 64)
+					cpu_load += cpu_request
+					mem_request, _ := strconv.ParseInt(pod.Properties["memory"], 10, 64)
+					mem_load += int(mem_request)
+				}
+			}
+			cpu_limit, _ := strconv.ParseFloat(node.Properties["cpu"], 64)
+			mem_limit, _ := strconv.ParseInt(node.Properties["memory"], 10, 64)
+			if cpu_load > cpu_limit {
+				val += cpu_load - cpu_limit
+			}
+			if mem_load > int(mem_limit) {
+				val += float64(mem_load - int(mem_limit))
+			}
+			if debug {
+				println("node", node.Name, "CPU load:", cpu_load, "CPU available:", node.Properties["cpu"], "Memory load:", mem_load, "Memory available:", node.Properties["memory"])
+			}
+		}
+	}
+	if debug {
+		println("Resources penalty:", val)
+	}
+	return val
+}
+
+func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) float64 {
+
+	val := 0.0
+
+	edges, _ := graph.Edges()
+	for _, edge := range edges {
+		if edge.Properties.Attributes["type"] == "connection" {
+			json, _ := json.Marshal(math.LinearFunction{M: 0, A: 0, C: 0})
+			edge.Properties.Attributes["wanted_connection"] = string(json)
+		}
+	}
+
+	vertices, _ := graph.AdjacencyMap()
+	for vertex := range vertices {
+		pod, _ := graph.Vertex(vertex)
+		if pod.Type == "pod" {
+			networkComRequirementsString := pod.Properties["networkComRequirements"]
+			networkComRequirements := []common.NetworkComRequirement{}
+			err := json.Unmarshal([]byte(networkComRequirementsString), &networkComRequirements)
+			if err != nil {
+				if debug {
+					println("Error unmarshalling networkComRequirements for pod", pod.Name, ":", err)
+				}
+				continue
+			}
+			// println("Pod", pod.Name, "has networkComRequirements:", networkComRequirements[0].Target)
+
+			for _, networkComRequirement := range networkComRequirements {
+				destinations := common.NodesWithPrefix(graph, networkComRequirement.Target)
+				if len(destinations) == 0 {
+					if debug {
+						println("No nodes with prefix", networkComRequirement.Target, "found")
+					}
+					continue
+				}
+				//TODO This only considers a single Target, extend to multiple ones
+				shortestPath, err := gograph.ShortestPath(graph, common.AssignedNode(graph, pod.Name), common.AssignedNode(graph, destinations[0]))
+				if err != nil {
+					if debug {
+						println("Error finding shortest path between pod", common.AssignedNode(graph, pod.Name), "and", common.AssignedNode(graph, destinations[0]), ":", err)
+					}
+					continue
+				}
+
+				lastAdditionalOutput := math.LinearFunction{M: float64(networkComRequirement.Throughput), A: 0, C: 0}
+				for i := range shortestPath[0 : len(shortestPath)-1] {
+					if debug {
+						println("Current Link", shortestPath[i], shortestPath[i+1])
+						println("LastAdditionalOutput: ", lastAdditionalOutput.String())
+					}
+
+					old_link_wanted_service := math.LinearFunction{}
+					edge, _ := graph.Edge(shortestPath[i], shortestPath[i+1])
+					json.Unmarshal([]byte(edge.Properties.Attributes["wanted_connection"]), &old_link_wanted_service)
+
+					// println("Old link wanted service: ", old_link_wanted_service.String())
+
+					new_link_wanted_service := math.Multiply(lastAdditionalOutput, old_link_wanted_service)
+					// println("New link wanted service: ", new_link_wanted_service.String())
+
+					edge.Properties.Attributes["wanted_connection"] = new_link_wanted_service.String()
+
+					throughput, err := strconv.ParseFloat(edge.Properties.Attributes["throughput"], 64)
+					if err != nil {
+						if debug {
+							println("Error parsing throughput:", err)
+						}
+						continue
+					}
+					if old_link_wanted_service.M > throughput {
+						lastAdditionalOutput = math.LinearFunction{M: throughput, A: 0, C: 0}
+					} else {
+						if new_link_wanted_service.M <= throughput {
+							lastAdditionalOutput = lastAdditionalOutput
+						} else {
+							lastAdditionalOutput = math.Devide(math.LinearFunction{M: throughput, A: 0, C: 0}, old_link_wanted_service)
+						}
+					}
+
+					if new_link_wanted_service.M > throughput {
+						val += float64(common.Cfg.Penalties.Throughput) * (new_link_wanted_service.M - throughput)
+					}
+
+				}
+
+			}
+
+		}
+	}
+
+	return val
+}
+
+func labels_penalty(graph gograph.Graph[string, *common.Node], debug bool) float64 {
+	val := 0.0
+	vertices, _ := graph.AdjacencyMap()
+	for vertex := range vertices {
+		node, _ := graph.Vertex(vertex)
+		if node.Type == "node" {
+			if node.Properties["labels"] != "" {
+				// println("Node", node.Name, "has labels:", node.Properties["labels"])
+				var nodeLabelsMap map[string]string
+				err := json.Unmarshal([]byte(node.Properties["labels"]), &nodeLabelsMap)
+				if err != nil {
+					if debug {
+						println("Error unmarshalling labels for node", node.Name, ":", err)
+					}
+					continue
+				}
+				edges, _ := graph.Edges()
+				for _, edge := range edges {
+					if edge.Target == node.Name && edge.Properties.Attributes["type"] == "assign" {
+						pod, _ := graph.Vertex(edge.Source)
+						node_selector := pod.Properties["nodeSelector"]
+						if node_selector != "" {
+							var nodeSelectorMap map[string]string
+
+							err := json.Unmarshal([]byte(node_selector), &nodeSelectorMap)
+							if err != nil {
+								if debug {
+									println("Error unmarshalling labels for pod", pod.Name, ":", err)
+								}
+								continue
+							}
+
+							for key, value := range nodeSelectorMap {
+
+								if nodeLabelsMap[key] != value {
+									if debug {
+										println("Pod", pod.Name, "has label", key, "with value", value, "but node", node.Name, "has label", key, "with value", nodeLabelsMap[key])
+									}
+									val += float64(common.Cfg.Penalties.Label)
+								}
+							}
+
+						}
+					}
+				}
+
+			}
+		}
+	}
+	return val
+}
+
+// Every node adds to the stability penality.
+// It is calculated like this: val += node_crashes / floating_average_window
+func node_stability_penalty(graph gograph.Graph[string, *common.Node], debug bool) float64 {
+	val := 0.0
+	vertices, _ := graph.AdjacencyMap()
+	for vertex := range vertices {
+		node, err := graph.Vertex(vertex)
+		if err != nil {
+			log.Println("Error retrieving node ", node.Name, " from Graph")
+			continue
+		}
+		if node.Type != "node" {
+			continue
+		}
+		currentTime := time.Now()
+		crashes := 0
+		for _, unavailableMoment := range UnavailabilityMap[node.Name] {
+			if unavailableMoment.After(currentTime.Add(-1*time.Minute*time.Duration(common.Cfg.Stability.FloatingAverageWindow))) {
+				crashes += 1
+			}
+		}
+		log.Println(node.Name, " had ", crashes, " from ", currentTime.Add(-1*time.Minute*time.Duration(common.Cfg.Stability.FloatingAverageWindow)), " to ", time.Now())
+		val += float64(crashes / common.Cfg.Stability.FloatingAverageWindow)
+	}
+	return val
+}
+
+func spread_penalty(graph gograph.Graph[string, *common.Node], debug bool) float64 {
+	return 0
+}

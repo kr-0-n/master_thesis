@@ -1,0 +1,10 @@
+penalties:
+  move_pod: 100
+  unconnected_pod: 1000
+  label: 1000
+  latency: 1
+  throughput: 10
+  stability: 10
+
+stability:
+  floating_average_window: 30 # in minutes

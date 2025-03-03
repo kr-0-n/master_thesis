@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apiserver
+  labels:
+    app: api_server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api_server
+  template:
+    metadata:
+      labels:
+        app: api_server
+    spec:
+      containers:
+      - name: client 
+        image: harbor.uio.no/uio-ifi-ex-k8s-c/api_server:latest
+        ports:
+        - containerPort: 50051
+      imagePullSecrets:
+      - name: regcred
+    

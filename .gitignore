@@ -9,3 +9,8 @@ k8_deployment/keystone_rc.sh
 simulator/deploy/grafana_data
 simulator/deploy/sql_data
 k8_deployment/k3s.yaml
+
+# rust build stuff
+api_server/target
+# dont check in the database
+api_server/database.db

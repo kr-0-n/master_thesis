@@ -1,0 +1,43 @@
+- name: Install network connections
+  hosts: all
+  vars:
+    network_connections:
+      k8-worker-1:
+        - from: "{{ hostvars['k8-worker-1']['ansible_host'] }}"
+          to: "{{ hostvars['k8-manager-0']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 100mbit
+        - from: "{{ hostvars['k8-worker-1']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-0']['ansible_host'] }}"
+          latency: 10ms
+          throughput: 500mbit
+  tasks:
+    - name: Delete old qdiscs
+      become: true
+      shell: "tc qdisc del dev enp3s0 root"
+      ignore_errors: true
+
+    - name: Add root qdisc
+      become: true
+      shell: "tc qdisc add dev enp3s0 root handle 1: htb default 0"
+
+    - name: Add classes for throughput
+      become: true
+      shell: "tc class add dev enp3s0 parent 1: classid 1:{{ ansible_loop.index }} htb rate {{ item.throughput }}"
+      loop: "{{ network_connections[ansible_hostname] | default([]) }}"
+      loop_control:
+        extended: true
+
+    - name: Add qdiscs for latency and packetloss
+      become: true
+      shell: "tc qdisc add dev enp3s0 parent 1:{{ ansible_loop.index }} handle {{ ansible_loop.index }}0: netem delay {{ item.latency }}"
+      loop: "{{ network_connections[ansible_hostname] | default([]) }}"
+      loop_control:
+        extended: true
+    
+    - name: Add filters
+      become: true
+      shell: "tc filter add dev enp3s0 protocol ip parent 1:0 prio 1 u32 match ip dst {{ item.to }} flowid 1:{{ ansible_loop.index }}"
+      loop: "{{ network_connections[ansible_hostname] | default([]) }}"
+      loop_control:
+        extended: true

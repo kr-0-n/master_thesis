@@ -19,7 +19,7 @@ k8.deploy(conf.deployment)
 while time.current_time_step() < 1440:
     k8.tick()
     if time.current_time_step() % 5 == 0:
-        print(f"chaos monkey invoked at {time.current_time_step()}")
+        print(f"network repaired at {time.current_time_step()}")
         network_administration.repair_network(k8.graph)
         # k8.scheduler.optimize(k8.graph)
 

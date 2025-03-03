@@ -5,7 +5,7 @@ metadata:
   labels:
     app: client-server-app
 spec:
-  replicas: 1
+  replicas: 4
   selector:
     matchLabels:
       app: nginx
@@ -21,7 +21,13 @@ spec:
         env:
           - name: NetworkComRequirements
             value: '[{"Target": "server-deployment", "Latency": 10, "Throughput": 5}]'
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "512Mi"
+          requests:
+            cpu: "0.5"
+            memory: "512Mi"
         
         ports:
         - containerPort: 80
-    

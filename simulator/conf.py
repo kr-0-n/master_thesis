@@ -1,6 +1,12 @@
 from k8.algorithm import *
 def get_node_node(id):
     return (id, {"type": "node", "color": "lightblue", "shape": "s"})
+
+mini_graph={
+    "nodes": [(1, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["1"]}), (2, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["2"]}), (3, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["3"]}), (4, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["4"]}), (5, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["5"]}),],
+    "edges": [(1, 3, {"throughput": 15, "latency": 2}), (2, 3, {"throughput": 15, "latency": 2}), (3, 4, {"throughput": 15, "latency": 2}), (4, 5, {"throughput": 20, "latency": 2})],
+    "pos": {1: [0, 0]}
+}
 # Start with index 1. Index 0 is the nonexistent node
 small_graph={
     "nodes": [(1, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["SSD"]}),
@@ -50,6 +56,13 @@ medium_graph={
     "pos": {1: [-0.34833021,  0.09425495], 2: [ 0.01927328, -0.07205069], 3: [-0.43677531,  0.66727785], 4: [ 0.50957367, -0.06202244], 5: [0.98649442, 0.24973923], 6: [-0.84259233, -0.21467222], 7: [-0.89098206,  0.34020218], 8: [ 0.00333854, -0.64498511], 9: [ 1, -0.35774376]}
 }
 
+mini_deployment = {
+    "pods": [(6, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(8,2,10)], "labelSelector": ["1"]}),
+             (7, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(9,2,10)], "labelSelector": ["2"]}),
+             (8, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [], "labelSelector": ["5"]}),
+             (9, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [], "labelSelector": ["4"]}),]
+}
+
 small_deployment = {
     "pods": [(5, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(6,3,5)]}), # network syntax: (pod_to, latency, throughput)
              (6, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(7,3,2)]}),
@@ -95,8 +108,10 @@ medium_deployment = {
              ],
 }
 
-graph = small_graph
-deployment = small_deployment
+enable_metrics = False
+
+graph = mini_graph
+deployment = mini_deployment
 
 algorithm = evolutionary_solve
 metrics_name_postfix = "perfect_solve"

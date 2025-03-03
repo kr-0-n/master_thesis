@@ -16,7 +16,7 @@ variable "network" {
 
 # Mapping between role and image
 variable "image" {
-  default = "GOLD Ubuntu 20.04 LTS"
+  default = "GOLD Ubuntu 22.04 LTS"
 }
 
 # Mapping between role and flavor
