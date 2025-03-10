@@ -154,6 +154,24 @@ func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) floa
 					continue
 				}
 
+				accumulated_latency := 0
+				// Calculate the latency penalty
+				for i := range shortestPath[0 : len(shortestPath)-1] {
+					edge, err := graph.Edge(shortestPath[i], shortestPath[i+1])
+					if err != nil {
+						log.Panic(err)
+					}
+					lat, _ := strconv.ParseInt(edge.Properties.Attributes["latency"], 10, 64)
+					accumulated_latency += int(lat)
+				}
+				if debug {
+					println("Accumulated Latency on ", shortestPath, accumulated_latency)
+				}
+				if accumulated_latency >= networkComRequirement.Latency {
+					val += float64(common.Cfg.Penalties.Latency * (accumulated_latency - networkComRequirement.Latency))
+				}
+
+				// Calculate the throughput penalty
 				lastAdditionalOutput := math.LinearFunction{M: float64(networkComRequirement.Throughput), A: 0, C: 0}
 				for i := range shortestPath[0 : len(shortestPath)-1] {
 					if debug {
@@ -272,11 +290,13 @@ func node_stability_penalty(graph gograph.Graph[string, *common.Node], debug boo
 		currentTime := time.Now()
 		crashes := 0
 		for _, unavailableMoment := range UnavailabilityMap[node.Name] {
-			if unavailableMoment.After(currentTime.Add(-1*time.Minute*time.Duration(common.Cfg.Stability.FloatingAverageWindow))) {
+			if unavailableMoment.After(currentTime.Add(-1 * time.Minute * time.Duration(common.Cfg.Stability.FloatingAverageWindow))) {
 				crashes += 1
 			}
 		}
-		log.Println(node.Name, " had ", crashes, " from ", currentTime.Add(-1*time.Minute*time.Duration(common.Cfg.Stability.FloatingAverageWindow)), " to ", time.Now())
+		if debug {
+			log.Println(node.Name, " had ", crashes, " from ", currentTime.Add(-1*time.Minute*time.Duration(common.Cfg.Stability.FloatingAverageWindow)), " to ", time.Now())
+		}
 		val += float64(crashes / common.Cfg.Stability.FloatingAverageWindow)
 	}
 	return val

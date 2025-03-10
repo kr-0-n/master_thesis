@@ -2,7 +2,7 @@ penalties:
   move_pod: 100
   unconnected_pod: 1000
   label: 1000
-  latency: 1
+  latency: 100
   throughput: 10
   stability: 10
 

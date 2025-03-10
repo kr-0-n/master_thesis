@@ -121,7 +121,7 @@ random_seed = 14
 move_pod_penalty = 100
 unconnected_pod_penalty = 1000
 label_penalty = 1000
-latency_penalty = 1
+latency_penalty = 100
 throughput_penalty = 10 # calculated like this: penalty = throughput_penalty * (wanted_throughput - actual_throughput)
 
 # Stability is calculated like this: penalty = stability_penalty * floating_average_of_crashes

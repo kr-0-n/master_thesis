@@ -45,9 +45,13 @@ def network_penalty(graph, debug=False):
 
                 last_additional_output = LinearFunction(connection[2], 0, 0)
 
+
+                accumulated_latency = 0
                 for step in range(len(shortest_path) - 1):
+                    
                     if debug: print(f"latest additional output: {last_additional_output}")
                     link = graph.edges[( shortest_path[step],shortest_path[step+1])]
+                    accumulated_latency += link["latency"]
                     old_link_wanted_service = link["wanted_service"][(shortest_path[step],shortest_path[step+1])]
 
                     new_link_wanted_service = multiply(last_additional_output, old_link_wanted_service)
@@ -63,6 +67,8 @@ def network_penalty(graph, debug=False):
                     # In this case we have a higher usage then we can serve - this leads to a peanlty
                     if new_link_wanted_service.m > link['service'].m:
                         val += throughput_penalty * (new_link_wanted_service.m - link['service'].m)
+                print("accumulated latency", accumulated_latency)
+                val += latency_penalty * accumulated_latency
 
     if debug: print([graph.edges[edge] for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "connection"])
     return val

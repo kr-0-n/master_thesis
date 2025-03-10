@@ -67,11 +67,11 @@ func EdgeAttributes(kind string, link Link) []func(*gograph.EdgeProperties) {
 		}
 	} else if kind == "connection" {
 		return []func(*gograph.EdgeProperties){
-			gograph.EdgeAttribute("type", "connection"), gograph.EdgeAttribute("throughput", strconv.Itoa(link.Throughput)),  gograph.EdgeAttribute("label", strconv.Itoa(link.Latency)+"ms "+strconv.Itoa(link.Throughput)+"mbps"),
+			gograph.EdgeAttribute("type", "connection"), gograph.EdgeAttribute("throughput", strconv.Itoa(link.Throughput)), gograph.EdgeAttribute("latency", strconv.Itoa(link.Latency)),  gograph.EdgeAttribute("label", strconv.Itoa(link.Latency)+"ms "+strconv.Itoa(link.Throughput)+"mbps"),
 		}
 	} else if kind == "offline_connection" {
 		return []func(*gograph.EdgeProperties){
-			gograph.EdgeAttribute("type", "offline_connection"), gograph.EdgeAttribute("throughput", strconv.Itoa(link.Throughput)), gograph.EdgeAttribute("label", strconv.Itoa(link.Latency)+"ms "+strconv.Itoa(link.Throughput)+"mbps"), gograph.EdgeAttribute("style", "dotted"),
+			gograph.EdgeAttribute("type", "offline_connection"), gograph.EdgeAttribute("throughput", strconv.Itoa(link.Throughput)), gograph.EdgeAttribute("latency", strconv.Itoa(link.Latency)), gograph.EdgeAttribute("label", strconv.Itoa(link.Latency)+"ms "+strconv.Itoa(link.Throughput)+"mbps"), gograph.EdgeAttribute("style", "dotted"),
 		}
 	} else if kind == "assign" {
 		return []func(*gograph.EdgeProperties){
