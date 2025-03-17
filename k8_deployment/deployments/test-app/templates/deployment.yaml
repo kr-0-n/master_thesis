@@ -1,0 +1,86 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-client
+  labels:
+    app: {{ .Release.Name }}-client
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-client
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-client
+    spec:       
+      schedulerName: custom-scheduler
+      containers:
+      - name: {{ .Release.Name }}-client
+        image: harbor.uio.no/uio-ifi-ex-k8s-c/client:latest 
+        env:
+        - name: TARGET
+          value: {{ .Release.Name }}-server
+        - name: BANDWIDTH
+          value: {{ .Values.env.BANDWIDTH }}Mbit
+        - name: NetworkComRequirements
+          value: '[{"Target": "{{ .Release.Name }}-server", "Latency": 10, "Throughput": {{ .Values.env.BANDWIDTH }}}]'
+        volumeMounts:
+        - name: logs
+          mountPath: /logs
+      imagePullSecrets:
+      - name: regcred
+      volumes:
+      - name: logs
+        hostPath:
+          path: /logs
+          type: Directory
+        
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-server
+  labels:
+    app: {{ .Release.Name }}-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-server
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-server
+    spec:
+      schedulerName: custom-scheduler
+      containers:
+      - name: {{ .Release.Name }}-server
+        image: harbor.uio.no/uio-ifi-ex-k8s-c/server:latest  
+        volumeMounts:
+        - mountPath: /logs
+          name: logs-volume
+          readOnly: false
+      imagePullSecrets:
+      - name: regcred
+      volumes:
+      - name: logs-volume
+        hostPath:
+          path: /logs
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-server
+  labels:
+    app: {{ .Release.Name }}-server
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Release.Name }}-server
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001

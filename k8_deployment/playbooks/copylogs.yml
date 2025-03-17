@@ -1,0 +1,13 @@
+- name: Copy logs
+  hosts: all
+  tasks:
+    - name: Set environment variable
+      set_fact:
+        experiment: "{{ lookup('env', 'EXPERIMENT') | default('', true) }}"
+
+    - name: Copy logs directory
+      become: true
+      synchronize:
+        src: /logs/
+        dest: "~/uni/master_thesis/testbed/{{ experiment }}/{{ inventory_hostname }}/"
+        mode: pull

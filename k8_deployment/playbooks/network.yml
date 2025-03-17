@@ -2,15 +2,70 @@
   hosts: all
   vars:
     network_connections:
+      k8-manager-0:
+        - from: "{{ hostvars['k8-manager-0']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-0']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
+        - from: "{{ hostvars['k8-manager-0']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-1']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
+        - from: "{{ hostvars['k8-manager-0']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-2']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
+        - from: "{{ hostvars['k8-manager-0']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-6']['ansible_host'] }}"
+          latency: 2ms
+          throughput: 100mbit
+      k8-worker-0:
+        - from: "{{ hostvars['k8-worker-0']['ansible_host'] }}"
+          to: "{{ hostvars['k8-manager-0']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
       k8-worker-1:
         - from: "{{ hostvars['k8-worker-1']['ansible_host'] }}"
           to: "{{ hostvars['k8-manager-0']['ansible_host'] }}"
           latency: 20ms
+          throughput: 33mbit
+      k8-worker-2:
+        - from: "{{ hostvars['k8-worker-2']['ansible_host'] }}"
+          to: "{{ hostvars['k8-manager-0']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
+      k8-worker-6:
+        - from: "{{ hostvars['k8-worker-6']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-3']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
+        - from: "{{ hostvars['k8-worker-6']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-4']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
+        - from: "{{ hostvars['k8-worker-6']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-5']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
+        - from: "{{ hostvars['k8-worker-6']['ansible_host'] }}"
+          to: "{{ hostvars['k8-manager-0']['ansible_host'] }}"
+          latency: 2ms
           throughput: 100mbit
-        - from: "{{ hostvars['k8-worker-1']['ansible_host'] }}"
-          to: "{{ hostvars['k8-worker-0']['ansible_host'] }}"
-          latency: 10ms
-          throughput: 500mbit
+      k8-worker-3:
+        - from: "{{ hostvars['k8-worker-3']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-6']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
+      k8-worker-4:
+        - from: "{{ hostvars['k8-worker-4']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-6']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
+      k8-worker-5:
+        - from: "{{ hostvars['k8-worker-5']['ansible_host'] }}"
+          to: "{{ hostvars['k8-worker-6']['ansible_host'] }}"
+          latency: 20ms
+          throughput: 10mbit
   tasks:
     - name: Delete old qdiscs
       become: true

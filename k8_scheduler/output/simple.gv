@@ -1,0 +1,62 @@
+strict digraph {
+
+
+	"app-test-client-b984879d6-w597v" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"app-test-client-b984879d6-w597v" -> "app-test-server-6584c948ff-lvb92" [ color="green", label="10ms 100mbps", latency="10", throughput="100", type="networkComRequirement",  weight=0 ];
+
+	"app-test-client-b984879d6-w597v" -> "k8-worker-2" [ type="assign",  weight=0 ];
+
+	"k8-worker-5" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-worker-5" -> "k8-worker-6" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"app-test-server-6584c948ff-lvb92" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"app-test-server-6584c948ff-lvb92" -> "k8-worker-0" [ type="assign",  weight=0 ];
+
+	"k8-manager-0" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-manager-0" -> "k8-worker-0" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"k8-manager-0" -> "k8-worker-1" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"k8-manager-0" -> "k8-worker-2" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"k8-manager-0" -> "k8-worker-6" [ label="2ms 1000mbps", latency="2", throughput="1000", type="connection",  weight=0 ];
+
+	"k8-worker-0" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-worker-0" -> "k8-manager-0" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"k8-worker-2" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-worker-2" -> "k8-manager-0" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"k8-worker-3" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-worker-3" -> "k8-worker-6" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"k8-worker-4" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-worker-4" -> "k8-worker-6" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"apiserver-669b498c78-pp8mh" [ color="2", colorscheme="greens3", fillcolor="1", shape="ellipse", style="filled",  weight=0 ];
+
+	"apiserver-669b498c78-pp8mh" -> "k8-manager-0" [ type="assign",  weight=0 ];
+
+	"k8-worker-1" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-worker-1" -> "k8-manager-0" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"k8-worker-6" [ color="2", colorscheme="blues3", fillcolor="1", shape="rect", style="filled",  weight=0 ];
+
+	"k8-worker-6" -> "k8-worker-3" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"k8-worker-6" -> "k8-worker-4" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"k8-worker-6" -> "k8-worker-5" [ label="20ms 100mbps", latency="20", throughput="100", type="connection",  weight=0 ];
+
+	"k8-worker-6" -> "k8-manager-0" [ label="2ms 1000mbps", latency="2", throughput="1000", type="connection",  weight=0 ];
+
+}

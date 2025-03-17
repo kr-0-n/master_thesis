@@ -19,5 +19,21 @@
     - name: Copy k3s config
       become: true
       fetch: 
-        src=/etc/rancher/k3s/k3s.yaml 
-        dest=k3s.yaml
+        src: /etc/rancher/k3s/k3s.yaml 
+        dest: kubeconfig.yml
+        flat: yes
+
+- name: Set up Logs directory
+  hosts: all
+  tasks:
+    - name: Create logs directory
+      become: true
+      file:
+        path: /logs
+        state: directory
+    - name: Chown logs directory
+      become: true
+      shell: chown ubuntu /logs
+    - name: Set permissions on logs directory
+      become: true
+      shell: chmod 777 /logs

@@ -215,7 +215,7 @@ func queryLinkApi(links *[]common.Link) {
 }
 
 func connectToK8s() *kubernetes.Clientset {
-	config, err := clientcmd.BuildConfigFromFlags("", "/home/kron/uni/master_thesis/k8_deployment/k3s.yaml/k8-manager-0/etc/rancher/k3s/k3s.yaml")
+	config, err := clientcmd.BuildConfigFromFlags("", "/home/kron/uni/master_thesis/k8_deployment/playbooks/kubeconfig.yml")
 	if err != nil {
 		// Try to use in-cluster configuration if the kubeconfig is not available
 		config, err = rest.InClusterConfig()

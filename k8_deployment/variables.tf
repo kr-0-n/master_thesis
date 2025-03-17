@@ -32,7 +32,7 @@ variable "role_flavor" {
 variable "role_count" {
   type = map(string)
   default = {
-    "worker" = 2
+    "worker" = 7
     "manager"  = 1
   }
 }

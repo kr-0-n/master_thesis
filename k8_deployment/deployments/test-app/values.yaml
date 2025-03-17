@@ -1,0 +1,9 @@
+replicaCount: 1
+env:
+  BANDWIDTH: "100" #in Mbit
+
+ingress:
+  enabled: false
+
+service:
+  type: ClusterIP
