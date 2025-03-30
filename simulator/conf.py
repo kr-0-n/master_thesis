@@ -1,43 +1,43 @@
 from k8.algorithm import *
 def get_node_node(id):
-    return (id, {"type": "node", "color": "lightblue", "shape": "s"})
+    return (id, {"type": "node"})
 
 mini_graph={
-    "nodes": [(1, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["1"]}), (2, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["2"]}), (3, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["3"]}), (4, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["4"]}), (5, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["5"]}),],
+    "nodes": [(1, {"type": "node", "cpu": 1000, "mem": 100, "labels": ["1"]}), (2, {"type": "node", "cpu": 100, "mem": 100, "labels": ["2"]}), (3, {"type": "node", "cpu": 100, "mem": 100, "labels": ["3"]}), (4, {"type": "node", "cpu": 100, "mem": 100, "labels": ["4"]}), (5, {"type": "node", "cpu": 100, "mem": 100, "labels": ["5"]}),],
     "edges": [(1, 3, {"throughput": 15, "latency": 2}), (2, 3, {"throughput": 15, "latency": 2}), (3, 4, {"throughput": 15, "latency": 2}), (4, 5, {"throughput": 20, "latency": 2})],
     "pos": {1: [0, 0]}
 }
 # Start with index 1. Index 0 is the nonexistent node
 small_graph={
-    "nodes": [(1, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100, "labels": ["SSD"]}),
-              (2, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100}),
-              (3, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100}),
-              (4, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 100, "mem": 100}),],
+    "nodes": [(1, {"type": "node", "cpu": 100, "mem": 100, "labels": ["SSD"]}),
+              (2, {"type": "node", "cpu": 100, "mem": 100}),
+              (3, {"type": "node", "cpu": 100, "mem": 100}),
+              (4, {"type": "node", "cpu": 100, "mem": 100}),],
     "edges": [(1, 2, {"throughput": 5, "latency": 2}), (1, 3, {"throughput": 1, "latency": 3}), (2, 4, {"throughput": 3, "latency": 4}), (3, 4, {"throughput": 10, "latency": 10})],
     "pos": {1: [-0.34833021,  0.09425495], 2: [ 0.01927328, -0.07205069], 3: [-0.43677531,  0.66727785], 4: [ 0.50957367, -0.06202244], 5: [0.98649442, 0.24973923], 6: [-0.84259233, -0.21467222], 7: [-0.89098206,  0.34020218], 8: [ 0.00333854, -0.64498511], 9: [ 1, -0.35774376]}
 }
 
 medium_graph={
-    "nodes": [(1, {"type": "node", "color": "lightcoral", "shape": "s", "cpu": 100, "mem": 64}),
-              (2, {"type": "node", "color": "lightcoral", "shape": "s", "cpu": 100, "mem": 64}),
-              (3, {"type": "node", "color": "lightcoral", "shape": "s", "cpu": 100, "mem": 64}),
-              (4, {"type": "node", "color": "lightcoral", "shape": "s", "cpu": 100, "mem": 64}),
-              (5, {"type": "node", "color": "moccasin", "shape": "s", "cpu": 50, "mem": 32}),
-              (6, {"type": "node", "color": "moccasin", "shape": "s", "cpu": 50, "mem": 32}),
-              (7, {"type": "node", "color": "moccasin", "shape": "s", "cpu": 50, "mem": 32}),
-              (8, {"type": "node", "color": "moccasin", "shape": "s", "cpu": 50, "mem": 32}),
-              (9, {"type": "node", "color": "moccasin", "shape": "s", "cpu": 50, "mem": 32}),
-              (10, {"type": "node", "color": "moccasin", "shape": "s", "cpu": 50, "mem": 32}),
-              (11, {"type": "node", "color": "moccasin", "shape": "s", "cpu": 50, "mem": 32}),
-              (12, {"type": "node", "color": "moccasin", "shape": "s", "cpu": 50, "mem": 32}),
-              (13, {"type": "node", "color": "moccasin", "shape": "s", "cpu": 50, "mem": 32}),
-              (14, {"type": "node", "color": "moccasin", "shape": "s", "cpu": 50, "mem": 32}),
-              (15, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 20, "mem": 16}),
-              (16, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 20, "mem": 16}),
-              (17, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 20, "mem": 16}),
-              (18, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 20, "mem": 16}),
-              (19, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 20, "mem": 16}),
-              (20, {"type": "node", "color": "lightblue", "shape": "s", "cpu": 20, "mem": 16}),
+    "nodes": [(1, {"type": "node", "cpu": 100, "mem": 64}),
+              (2, {"type": "node", "cpu": 100, "mem": 64}),
+              (3, {"type": "node", "cpu": 100, "mem": 64}),
+              (4, {"type": "node", "cpu": 100, "mem": 64}),
+              (5, {"type": "node", "cpu": 50, "mem": 32}),
+              (6, {"type": "node", "cpu": 50, "mem": 32}),
+              (7, {"type": "node", "cpu": 50, "mem": 32}),
+              (8, {"type": "node", "cpu": 50, "mem": 32}),
+              (9, {"type": "node", "cpu": 50, "mem": 32}),
+              (10, {"type": "node", "cpu": 50, "mem": 32}),
+              (11, {"type": "node", "cpu": 50, "mem": 32}),
+              (12, {"type": "node", "cpu": 50, "mem": 32}),
+              (13, {"type": "node", "cpu": 50, "mem": 32}),
+              (14, {"type": "node", "cpu": 50, "mem": 32}),
+              (15, {"type": "node", "cpu": 20, "mem": 16}),
+              (16, {"type": "node", "cpu": 20, "mem": 16}),
+              (17, {"type": "node", "cpu": 20, "mem": 16}),
+              (18, {"type": "node", "cpu": 20, "mem": 16}),
+              (19, {"type": "node", "cpu": 20, "mem": 16}),
+              (20, {"type": "node", "cpu": 20, "mem": 16}),
               ],
     "edges": [
         # Strong interconnections between base Stations
@@ -57,61 +57,61 @@ medium_graph={
 }
 
 mini_deployment = {
-    "pods": [(6, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(8,2,10)], "labelSelector": ["1"]}),
-             (7, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(9,2,10)], "labelSelector": ["2"]}),
-             (8, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [], "labelSelector": ["5"]}),
-             (9, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [], "labelSelector": ["4"]}),]
+    "pods": [(6, {"type": "pod", "cpu": 610, "mem": 30, "network": [(8,2,10)]}),
+             (7, {"type": "pod", "cpu": 60, "mem": 30, "network": [(9,2,10)]}),
+             (8, {"type": "pod", "cpu": 60, "mem": 30, "network": []}),
+             (9, {"type": "pod", "cpu": 60, "mem": 30, "network": []}),]
 }
 
 small_deployment = {
-    "pods": [(5, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(6,3,5)]}), # network syntax: (pod_to, latency, throughput)
-             (6, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(7,3,2)]}),
-             (7, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(5,3,5)]}),
-             (8, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(8,3,1)]}),
-             (9, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(5,3,3)]}),
-             (10, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(5,3,3)]}),
-             (11, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 30, "network": [(9,5,3)], "labelSelector": ["SSD"]})
+    "pods": [(5, {"type": "pod", "cpu": 30, "mem": 30, "network": [(6,3,5)]}), # network syntax: (pod_to, latency, throughput)
+             (6, {"type": "pod", "cpu": 30, "mem": 30, "network": [(7,3,2)]}),
+             (7, {"type": "pod", "cpu": 30, "mem": 30, "network": [(5,3,5)]}),
+             (8, {"type": "pod", "cpu": 30, "mem": 30, "network": [(8,3,1)]}),
+             (9, {"type": "pod", "cpu": 30, "mem": 30, "network": [(5,3,3)]}),
+             (10, {"type": "pod", "cpu": 30, "mem": 30, "network": [(5,3,3)]}),
+             (11, {"type": "pod", "cpu": 30, "mem": 30, "network": [(9,5,3)], "labelSelector": ["SSD"]})
              ],
 }
 
 medium_deployment = {
     "pods": [
         # Data collection app
-        (21, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 8, "network": [(22,10,10)]}), # network syntax: (pod_to, latency, throughput)
-        (22, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 8, "network": [(21,10,10)]}),
-        (23, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
-        (24, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
-        (25, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
-        (26, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
-        (27, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
-        (28, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
-        (29, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
-        (30, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
-        (31, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
-        (32, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
+        (21, {"type": "pod", "cpu": 30, "mem": 8, "network": [(22,10,10)]}), # network syntax: (pod_to, latency, throughput)
+        (22, {"type": "pod", "cpu": 30, "mem": 8, "network": [(21,10,10)]}),
+        (23, {"type": "pod", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
+        (24, {"type": "pod", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
+        (25, {"type": "pod", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
+        (26, {"type": "pod", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
+        (27, {"type": "pod", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
+        (28, {"type": "pod", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
+        (29, {"type": "pod", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
+        (30, {"type": "pod", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
+        (31, {"type": "pod", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
+        (32, {"type": "pod", "cpu": 10, "mem": 1, "network": [(21,500,5)]}),
         # P2P Streaming app
-        (33, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 4, "network": [(34,100,10), (35,100,10), (36,100,10), (37,100,10)]}),
-        (34, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 4, "network": [(33,100,10), (35,100,10), (36,100,10), (37,100,10)]}),
-        (35, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 4, "network": [(33,10,10), (34,10,10), (36,10,10), (37,10,10)]}),
-        (36, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 4, "network": [(33,10,10), (34,10,10), (35,10,10), (37,10,10)]}),
-        (37, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 30, "mem": 4, "network": [(33,10,10), (34,10,10), (35,10,10), (36,10,10)]}),
+        (33, {"type": "pod", "cpu": 30, "mem": 4, "network": [(34,100,10), (35,100,10), (36,100,10), (37,100,10)]}),
+        (34, {"type": "pod", "cpu": 30, "mem": 4, "network": [(33,100,10), (35,100,10), (36,100,10), (37,100,10)]}),
+        (35, {"type": "pod", "cpu": 30, "mem": 4, "network": [(33,10,10), (34,10,10), (36,10,10), (37,10,10)]}),
+        (36, {"type": "pod", "cpu": 30, "mem": 4, "network": [(33,10,10), (34,10,10), (35,10,10), (37,10,10)]}),
+        (37, {"type": "pod", "cpu": 30, "mem": 4, "network": [(33,10,10), (34,10,10), (35,10,10), (36,10,10)]}),
         # Video Streaming app
-        (38, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 60, "mem": 8, "network": []}),
-        (40, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 20, "mem": 2, "network": [(38,100,10)]}),
-        (41, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 20, "mem": 2, "network": [(38,100,10)]}),
-        (42, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 20, "mem": 2, "network": [(38,100,10)]}),
-        (43, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 20, "mem": 2, "network": [(38,100,10)]}),
+        (38, {"type": "pod", "cpu": 60, "mem": 8, "network": []}),
+        (40, {"type": "pod", "cpu": 20, "mem": 2, "network": [(38,100,10)]}),
+        (41, {"type": "pod", "cpu": 20, "mem": 2, "network": [(38,100,10)]}),
+        (42, {"type": "pod", "cpu": 20, "mem": 2, "network": [(38,100,10)]}),
+        (43, {"type": "pod", "cpu": 20, "mem": 2, "network": [(38,100,10)]}),
         # Web Server
-        (44, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 2, "network": []}),
-        (45, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 2, "network": []}),
-        (46, {"type": "pod", "color": "lightgreen", "shape": "o", "cpu": 10, "mem": 2, "network": []}),
+        (44, {"type": "pod", "cpu": 10, "mem": 2, "network": []}),
+        (45, {"type": "pod", "cpu": 10, "mem": 2, "network": []}),
+        (46, {"type": "pod", "cpu": 10, "mem": 2, "network": []}),
              ],
 }
 
 enable_metrics = False
 
-graph = mini_graph
-deployment = mini_deployment
+graph = medium_graph
+deployment = medium_deployment
 
 algorithm = evolutionary_solve
 metrics_name_postfix = "perfect_solve"
