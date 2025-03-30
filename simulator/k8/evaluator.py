@@ -67,7 +67,7 @@ def network_penalty(graph, debug=False):
                     # In this case we have a higher usage then we can serve - this leads to a peanlty
                     if new_link_wanted_service.m > link['service'].m:
                         val += throughput_penalty * (new_link_wanted_service.m - link['service'].m)
-                print("accumulated latency", accumulated_latency)
+                # print("accumulated latency", accumulated_latency)
                 val += latency_penalty * accumulated_latency
 
     if debug: print([graph.edges[edge] for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "connection"])
