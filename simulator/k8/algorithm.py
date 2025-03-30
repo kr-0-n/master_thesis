@@ -426,3 +426,54 @@ def plot_simulated_anealnealing_solution_space(solution):
         plt.show()
 
     return graph
+
+def kubernetes_default(graph, pods=None, debug=False, visualize=True):
+    for pod in pods:
+        feasible_nodes = list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")
+        ## Stage 1: Filtering
+        ## LabelSelector
+        for node in [node for node in feasible_nodes]:
+            if "labels" not in graph.nodes[node]:
+                node_labels = []
+            else:
+                node_labels = graph.nodes[node]["labels"]
+
+            if "labelSelector" not in pod[1]:
+                pod_label_selector = []
+            else:
+                pod_label_selector = pod[1]["labelSelector"]
+            for label_selector in pod_label_selector:
+                if label_selector not in node_labels:
+                    feasible_nodes.remove(node)
+                    break
+
+        ## NodeResourceFit
+        for node in [node for node in feasible_nodes]:
+            cpu_load = 0
+            mem_load = 0
+            for neighbour in [neighbour for neighbour in graph.neighbors(node) if graph.nodes[neighbour]["type"] == "pod"]:
+                    cpu_load += graph.nodes[neighbour]["cpu"]
+                    mem_load += graph.nodes[neighbour]["mem"]
+            if cpu_load + pod[1]["cpu"] > graph.nodes[node]["cpu"] or mem_load + pod[1]["mem"] > graph.nodes[node]["mem"]:
+                feasible_nodes.remove(node)
+
+        ## Stage 2: Scoring
+        scored_nodes = [ (node, 0) for node in feasible_nodes ]
+        ## Aim for an even distribution
+        num_pods = len([node for node in graph.nodes if graph.nodes[node]["type"] == "pod"]) + 1
+        num_nodes = len([node for node in graph.nodes if graph.nodes[node]["type"] == "node"])
+        avg_pods_per_node = num_pods / num_nodes
+        for node in scored_nodes:
+            num_scheduled_pods = len([neighbour for neighbour in graph.neighbors(node[0]) if graph.nodes[neighbour]["type"] == "pod"])
+            if num_scheduled_pods > avg_pods_per_node:
+                continue
+            else:
+                scored_nodes = [(node_name, score + avg_pods_per_node - num_scheduled_pods) if node_name == node[0] else (node_name, score) for node_name, score in scored_nodes]
+        
+        ## Stage 3: Selection
+        selected_node = max(scored_nodes, key=lambda item: item[1])[0]
+        graph.add_node(pod[0], **pod[1])
+        graph.add_edge(pod[0], selected_node, type="assign")
+        if visualize:
+            draw_graph(graph, "Kubernetes Default" + str(evaluate(graph)), conf.mini_graph)
+    return graph
