@@ -1,11 +1,11 @@
 import Time as time
 import mysql.connector
-import conf
 
 database_connection=None
 database_cursor=None
 name=None
-record_metrics=False
+
+record_metrics=True
 def update_metric(metric, value):
     """
     Update metrics with new values.

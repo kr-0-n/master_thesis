@@ -3,8 +3,8 @@ def get_node_node(id):
     return (id, {"type": "node"})
 
 mini_graph={
-    "nodes": [(1, {"type": "node", "cpu": 1000, "mem": 100, "labels": ["1"]}), (2, {"type": "node", "cpu": 100, "mem": 100, "labels": ["2"]}), (3, {"type": "node", "cpu": 100, "mem": 100, "labels": ["3"]}), (4, {"type": "node", "cpu": 100, "mem": 100, "labels": ["4"]}), (5, {"type": "node", "cpu": 100, "mem": 100, "labels": ["5"]}),],
-    "edges": [(1, 3, {"throughput": 15, "latency": 2}), (2, 3, {"throughput": 15, "latency": 2}), (3, 4, {"throughput": 15, "latency": 2}), (4, 5, {"throughput": 20, "latency": 2})],
+    "nodes": [(1, {"type": "node", "cpu": 100, "mem": 100, "labels": ["1"]}), (2, {"type": "node", "cpu": 100, "mem": 100, "labels": ["2"]}), (3, {"type": "node", "cpu": 100, "mem": 100, "labels": ["3"]})],
+    "edges": [(1, 3, {"throughput": 1, "latency": 220}), (2, 3, {"throughput": 1, "latency": 220})],
     "pos": {1: [0, 0]}
 }
 # Start with index 1. Index 0 is the nonexistent node
@@ -57,10 +57,11 @@ medium_graph={
 }
 
 mini_deployment = {
-    "pods": [(6, {"type": "pod", "cpu": 610, "mem": 30, "network": [(8,2,10)]}),
-             (7, {"type": "pod", "cpu": 60, "mem": 30, "network": [(9,2,10)]}),
-             (8, {"type": "pod", "cpu": 60, "mem": 30, "network": []}),
-             (9, {"type": "pod", "cpu": 60, "mem": 30, "network": []}),]
+    "pods": [(4, {"type": "pod", "cpu": 610, "mem": 30, "network": [(8,2,100)]}),
+             (5, {"type": "pod", "cpu": 60, "mem": 30, "network": [(9,2,100)]}),
+            #  (6, {"type": "pod", "cpu": 60, "mem": 30, "network": []}),
+            #  (7, {"type": "pod", "cpu": 60, "mem": 30, "network": []}),
+             ]
 }
 
 small_deployment = {
@@ -110,16 +111,18 @@ medium_deployment = {
 
 enable_metrics = False
 
-graph = medium_graph
-deployment = medium_deployment
+graph = small_graph
+deployment = small_deployment
 
-algorithm = evolutionary_solve
-metrics_name_postfix = "perfect_solve"
-random_seed = 14
+algorithm = kubernetes_default
+
+
+metrics_name_postfix = "k8"
+random_seed = 16
 
 # Penalties
-move_pod_penalty = 100
-unconnected_pod_penalty = 1000
+move_pod_penalty = 500
+unconnected_pod_penalty = 500
 label_penalty = 1000
 latency_penalty = 100
 throughput_penalty = 10 # calculated like this: penalty = throughput_penalty * (wanted_throughput - actual_throughput)
