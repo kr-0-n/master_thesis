@@ -41,9 +41,6 @@ def edge_styles(kind, link):
         return {"len": 0.2}
 
 def draw_graph(graph,  title, graph_data=None):
-    # if graph_data != None and len([node for node in graph.nodes if graph.nodes[node]["type"] == "node"]) == 4 and len([node for node in graph.nodes if graph.nodes[node]["type"] == "pod"]) <= 5:
-    #     pos=graph_data['pos']
-    # else:
     for pod in graph.nodes:
         if graph.nodes[pod]["type"] == "pod":
             for connection in graph.nodes[pod]["network"]:
@@ -68,26 +65,5 @@ def draw_graph(graph,  title, graph_data=None):
             graph.edges[edge].update(edge_styles("connection", graph.edges[edge]))
         if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "assign":
             graph.edges[edge].update(edge_styles("assign", graph.edges[edge]))
-
-
-    # nx.draw_networkx_nodes([node for node in graph.nodes if graph.nodes[node]['type']=='node'], pos=pos, node_color=[graph.nodes[node]['color'] for node in graph.nodes if graph.nodes[node]["type"]=="node"], node_size=1500, node_shape="s")
-    # nx.draw_networkx_nodes([node for node in graph.nodes if graph.nodes[node]['type']=='pod'], pos=pos, node_color=[graph.nodes[node]['color'] for node in graph.nodes if graph.nodes[node]["type"]=="pod"], node_size=1500, node_shape="o")
-    # nx.draw_networkx_labels(graph, pos=pos, font_size=16, font_color='black', font_weight='bold')
-    # nx.draw_networkx_edges(graph, edgelist=[edge for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "wanted_connection"], pos=pos, alpha=0.5, edge_color="green")
-    # nx.draw_networkx_edge_labels(graph, pos=pos, font_size=8, font_color='black', edge_labels={edge:str(graph.edges[edge]["latency"]) +"ms," + str(graph.edges[edge]["throughput"]) + "mbps" for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"]=="wanted_connection"})
-
-    # if any("wanted_service" in graph.edges[edge] for edge in graph.edges):
-    #     edge_connection_colors = [(max((list(graph.edges[edge]["wanted_service"].values())[0].m - graph.edges[edge]["service"].m)/10, 0),0.1,0.1,1) for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "connection" ]
-    # else:
-    #     edge_connection_colors = [(0.1,0.1,0.1,1) for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "connection" ]
-    # nx.draw_networkx_edges(graph, edgelist=[edge for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "connection" ], pos=pos, alpha=0.5, edge_color=edge_connection_colors)
-    # nx.draw_networkx_edge_labels(graph, pos=pos, font_size=8, font_color='black', edge_labels={edge:str(graph.edges[edge]["latency"]) +"ms," + str(graph.edges[edge]["throughput"]) + "mbps" for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"]=="connection" and "latency" in graph.edges[edge] and "throughput" in graph.edges[edge]})
-    
-    # nx.draw_networkx_edges(graph, edgelist=[edge for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "assign" ], pos=pos, alpha=0.5, edge_color="black")
-
-    # plt.title(title)
-    # plt.axis('off')
-    # plt.tight_layout()
-    # plt.show()    
     
     nx.drawing.nx_pydot.write_dot(graph, "graph.dot")
