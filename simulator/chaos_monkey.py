@@ -1,5 +1,5 @@
 import networkx as nx
-rnd=None
+rnd =None
 """
 The chaos monkey creates chaos by deleting nodes, pods, and links. Beware, they are randomly chosen.
 """
@@ -9,22 +9,25 @@ def delete_node(graph: nx.DiGraph):
     # remove random node and all adjacent assigned pods
     node = rnd.choice(list(node for node in graph.nodes if graph.nodes[node]["type"] == "node"))
     print(f"{__name__}: Deleting node {node}")
-    adjacent_nodes = list(graph.neighbors(node))
-    for adj_node in adjacent_nodes:
-        if graph.nodes[adj_node]["type"] == "pod":
-            graph.remove_node(adj_node)
+    # adjacent_nodes = list(graph.neighbors(node))
+    # for adj_node in adjacent_nodes:
+    #     if graph.nodes[adj_node]["type"] == "pod":
+    #         graph.remove_node(adj_node)
     graph.remove_node(node)
    
     return graph
 
 def delete_pod(graph):
     global rnd
-    pod = rnd.choice(list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod"))
-    print(f"{__name__}: Deleting pod {pod}")
-    graph.remove_node(pod)
-    for edge in graph.edges:
-        if edge[0] == pod or edge[1] == pod:
-            graph.remove_edge(edge[0], edge[1])
+    pods = [pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod"]
+
+    if pods:
+        pod = rnd.choice(pods)
+        print(f"{__name__}: Deleting pod {pod}")
+        graph.remove_node(pod)
+    else:
+        # Dummy RNG call to maintain sync
+        _ = rnd.random()
     return graph
 
 def delete_link(graph):
