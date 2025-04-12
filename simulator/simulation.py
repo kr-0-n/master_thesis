@@ -10,8 +10,9 @@ rnd = Random()
 rnd.seed(conf.random_seed)
 chaos_monkey.rnd = rnd
 
+run_id = rnd.randint(1000, 9999)
 
-metrics.initialize(conf.metrics_name_postfix, rnd.randint(1000, 9999))
+metrics.initialize(conf.metrics_name_postfix, run_id)
 print("metrics initialized")
 k8 = kubernetes_wrapper.Kubernetes(network_administration.setup_network(conf.graph), conf.algorithm)
 k8.deploy(conf.deployment)
@@ -40,3 +41,4 @@ while time.current_time_step() < 1440:
 
     time.increment_time()
     print(f"{__name__}: Time: {time.current_time_step()}")
+print(f"Simulation k8_simulation_{run_id}_{conf.metrics_name_postfix} finished at {time.current_time_step()}")

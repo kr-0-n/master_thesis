@@ -19,9 +19,11 @@ def network_penalty(graph, debug=False):
     for edge in (edge for edge in graph.edges if graph.edges[edge].get("type") == "connection"):
         graph.edges[edge]["wanted_service"] = {(edge[0], edge[1]):LinearFunction(0, 0, 0), (edge[1], edge[0]):LinearFunction(0, 0, 0)}
 
-
     for pod in graph.nodes:
         if graph.nodes[pod]["type"] == "pod":
+            if graph.neighbors(pod) == []:
+                val += unconnected_pod_penalty
+                continue
             for connection in graph.nodes[pod]["network"]:
                 # find starting node pod
                 adjacent_nodes = list(graph.neighbors(pod))
@@ -67,7 +69,7 @@ def network_penalty(graph, debug=False):
                     # In this case we have a higher usage then we can serve - this leads to a peanlty
                     if new_link_wanted_service.m > link['service'].m:
                         val += throughput_penalty * (new_link_wanted_service.m - link['service'].m)
-                print("accumulated latency", accumulated_latency)
+                # print("accumulated latency", accumulated_latency)
                 val += latency_penalty * accumulated_latency
 
     if debug: print([graph.edges[edge] for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "connection"])
