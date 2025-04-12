@@ -28,7 +28,7 @@ import (
 
 
 func main() {
-	common.LoadConfig("~/k3s.yaml")
+	common.LoadConfig("/home/cerdemo/Lorenz/master_thesis/k8_scheduler/common/config.yaml")
 	links := []common.Link{}
 
 	ticker := time.NewTicker(10 * time.Second)
@@ -215,7 +215,7 @@ func queryLinkApi(links *[]common.Link) {
 }
 
 func connectToK8s() *kubernetes.Clientset {
-	config, err := clientcmd.BuildConfigFromFlags("", "/home/kron/uni/master_thesis/k8_deployment/playbooks/kubeconfig.yml")
+	config, err := clientcmd.BuildConfigFromFlags("", "/home/cerdemo/Lorenz/master_thesis/k8_deployment/playbooks/kubeconfig.yml")
 	if err != nil {
 		// Try to use in-cluster configuration if the kubeconfig is not available
 		config, err = rest.InClusterConfig()
