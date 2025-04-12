@@ -28,7 +28,7 @@ import (
 
 
 func main() {
-	common.LoadConfig("/home/kron/uni/master_thesis/k8_scheduler/common/config.yaml")
+	common.LoadConfig("~/k3s.yaml")
 	links := []common.Link{}
 
 	ticker := time.NewTicker(10 * time.Second)
