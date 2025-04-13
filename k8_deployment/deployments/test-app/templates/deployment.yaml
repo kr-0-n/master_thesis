@@ -24,6 +24,8 @@ spec:
           value: {{ .Release.Name }}-server
         - name: BANDWIDTH
           value: {{ .Values.env.BANDWIDTH }}Mbit
+        - name: LATENCY
+          value: "{{ .Values.env.LATENCY }}"
         - name: NetworkComRequirements
           value: '[{"Target": "{{ .Release.Name }}-server", "Latency": {{ .Values.env.LATENCY }}, "Throughput": {{ .Values.env.BANDWIDTH }}}]'
         volumeMounts:
