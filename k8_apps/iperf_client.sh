@@ -2,7 +2,7 @@
 
 while true; do
     # Try iperf3 on a range of ports and run the first one that works
-    for port in $(seq 5001 5012); do
+    for port in $(seq 5002 5012); do
         iperf3 -c "$TARGET" --bandwidth "$BANDWIDTH" -p "$port" >> /logs/"$HOSTNAME".log &
         IPERF_PID=$!
         sleep 1  # Give it a moment to fail if it's going to
