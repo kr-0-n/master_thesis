@@ -25,7 +25,7 @@ spec:
         - name: BANDWIDTH
           value: {{ .Values.env.BANDWIDTH }}Mbit
         - name: NetworkComRequirements
-          value: '[{"Target": "{{ .Release.Name }}-server", "Latency": 10, "Throughput": {{ .Values.env.BANDWIDTH }}}]'
+          value: '[{"Target": "{{ .Release.Name }}-server", "Latency": {{ .Values.env.LATENCY }}, "Throughput": {{ .Values.env.BANDWIDTH }}}]'
         volumeMounts:
         - name: logs
           mountPath: /logs
