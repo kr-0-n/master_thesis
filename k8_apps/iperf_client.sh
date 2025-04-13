@@ -15,7 +15,7 @@ while true; do
     done
 
     # Start hping3 in TCP mode in background
-    hping3 -S -c 10 "$TARGET" >> /logs/"$HOSTNAME".log &
+    hping3 --syn -p 5001 -c 10 "$TARGET" >> /logs/"$HOSTNAME".log &
     HPING_PID=$!
 
     # Wait for both to finish
