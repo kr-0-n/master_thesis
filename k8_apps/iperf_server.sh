@@ -1,2 +1,4 @@
 #!/bin/sh
-iperf3 -s -p 5001  >> /logs/$HOSTNAME.log
+for port in $(seq 5001 5012); do
+    iperf3 -s -p $port >> /logs/$HOSTNAME.log &
+done
