@@ -4,15 +4,13 @@ from simmath.LinearFunction import LinearFunction
 from metrics import create_metric
 import Time as time
 
-graph = None
 node_failures = {} # syntax: {node: [time_of_failure]}
 
-
-def setup_network(graph_dict):
+def setup_network(graph_dict: dict) -> nx.Graph:
     # Create an undirected graph
     global shared_graph_dict
     shared_graph_dict = graph_dict
-    G = nx.Graph()
+    G = nx.DiGraph()
 
     # Add nodes
     G.add_nodes_from(shared_graph_dict['nodes'])
@@ -23,8 +21,6 @@ def setup_network(graph_dict):
         G.edges[edge]["service"] = LinearFunction(G.edges[edge]["throughput"], 0, -G.edges[edge]["latency"])
         print(G.edges[edge])
 
-    global graph
-    graph = G
     return G
 
 def repair_network(graph: nx.Graph):
