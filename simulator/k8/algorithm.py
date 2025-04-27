@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 from metrics import update_metric
+from utils import *
 
 rnd: Random = Random()
 rnd.seed(10)
@@ -20,7 +21,7 @@ def random(graph: nx.Graph, pod=None, debug=False, visualize=False):
     """
     global rnd
     if pod is None:
-        pod = rnd.choice(list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod"))
+        pod = rnd.choice(get_pod_ids(graph))
         # get node with all attributes
         pod = (pod, graph.nodes[pod])
         graph.remove_node(pod[0])
@@ -28,7 +29,7 @@ def random(graph: nx.Graph, pod=None, debug=False, visualize=False):
     # print(pod)
     graph.add_node(pod[0], **pod[1])
     #attach new node to random existing node
-    graph.add_edge(rnd.choice(list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")), pod[0], type="assign")
+    graph.add_edge(pod[0], rnd.choice(get_node_ids(graph)),  type="assign")
     #graph.add_edge(1 , node[0])
     update_metric("num_eval_func_calls", 0)
     return graph
@@ -142,7 +143,7 @@ def evolutionary_solve(graph, pods=None, debug=False, visualize=False):
                 if debug:
                     print(f"Child {i}")
                 new_graph = rnd.choice(generate_neighbour_states(survivors[parent][1]))
-                draw_graph(new_graph, conf.small_deployment, "Generation: " + str(generation) + " Parent: " + str(parent) + " Child: " + str(i))
+                # draw_graph(new_graph, conf.small_deployment, "Generation: " + str(generation) + " Parent: " + str(parent) + " Child: " + str(i))
                 children.append((evaluate_step(graph, new_graph, debug=False), new_graph))
         children.sort(key=lambda x: x[0])
         survivors = children[:survivors_per_generation]
@@ -154,7 +155,7 @@ def evolutionary_solve(graph, pods=None, debug=False, visualize=False):
     #print(f"checked {generations * chilren_per_parent * survivors_per_generation} combinations")
     update_metric("num_eval_func_calls", generations * chilren_per_parent * survivors_per_generation)
     return current_best[1]
-def generate_neighbour_states(graph: nx.Graph, graph_hash_map: dict[str, nx.Graph] = None) -> list[nx.Graph]:
+def generate_neighbour_states(graph: nx.DiGraph, graph_hash_map: dict[str, nx.Graph] = None) -> list[nx.Graph]:
     """
     Generate a list of neighbor states by removing an existing edge from the graph and adding a new edge connecting a node to the pod.
     Parameters:
@@ -166,7 +167,8 @@ def generate_neighbour_states(graph: nx.Graph, graph_hash_map: dict[str, nx.Grap
     Note:
         The function assumes that the graph is a NetworkX graph object and that the pods and nodes have the "type" attribute set to "pod" and "node", respectively.
     """
-    def cache_graph_hash(graph: nx.Graph, graph_hash_map: dict[str, nx.Graph]) -> nx.Graph:
+
+    def cache_graph_hash(graph: nx.DiGraph, graph_hash_map: dict[str, nx.Graph]) -> nx.Graph:
         if graph == None or graph_hash_map == None:
             return
         graph_hash = nx.weisfeiler_lehman_graph_hash(graph)
@@ -174,17 +176,17 @@ def generate_neighbour_states(graph: nx.Graph, graph_hash_map: dict[str, nx.Grap
             graph_hash_map[graph_hash] = graph
         return graph_hash_map[graph_hash]
         
-    set_of_nodes = list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")
-    set_of_pods = list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod")
+    set_of_nodes = get_node_ids(graph)
+    set_of_pods = get_pod_ids(graph)
     solutions = []
     for pod_id in set_of_pods:
         pod = graph.nodes[pod_id]
         new_graph = graph.copy()
         try:
-            new_graph.remove_edge(pod_id, list(graph.neighbors(pod_id))[0])
-        except:
+            new_graph.remove_edge(pod_id, get_assigned_node_id(new_graph, pod_id))
+        except nx.NetworkXError:
             new_graph = new_graph
-            # print(f"Pod {pod_id} has no neighbor")
+            # if debug: print(f"Pod {pod_id} has no neighbor")
         if graph_hash_map != None:
             solutions.append(cache_graph_hash(new_graph, graph_hash_map))
         else:
@@ -192,17 +194,18 @@ def generate_neighbour_states(graph: nx.Graph, graph_hash_map: dict[str, nx.Grap
         for node in set_of_nodes:
             new_graph = graph.copy()
             try:
-                new_graph.remove_edge(pod_id, list(graph.neighbors(pod_id))[0])
-            except:
+                new_graph.remove_edge(pod_id, get_assigned_node_id(new_graph, pod_id))
+            except nx.NetworkXError:
                 new_graph = new_graph
-                # print(f"Pod {pod_id} has no neighbor")
-            new_graph.add_edge(node, pod_id, type="assign")
+                # if debug: print(f"Pod {pod_id} has no neighbor")
+            new_graph.add_edge(pod_id, node,type="assign")
             if graph_hash_map != None:
                 solutions.append(cache_graph_hash(new_graph, graph_hash_map))
             else:
                 solutions.append(new_graph)
 
     # print(f"Generated {len(solutions)} neighbour states")
+   
     return solutions
 def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
     """
@@ -229,11 +232,11 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
     root_node = (evaluate_step(graph, first_solution, debug=False), first_solution) # syntax for an entry in the ant solution graph: (evaluation, graph)
     ant_solution_graph.add_node(root_node, type="solution", color='blue') 
     amount_of_ants = 10
-    moves_per_ant = 5
-    pheromone_evaporation = 0.5
+    moves_per_ant = 10
+    pheromone_evaporation = 0.9
     rounds = 10
     graph_hash_map = {}
-    pheromone_constant = 500
+    pheromone_constant = 5000
     if debug:
         print(f"ACO configuration: amount_of_ants={amount_of_ants}, moves_per_ant={moves_per_ant}, pheromone_evaporation={pheromone_evaporation}")
     # Add ants to the ant_solution_graph
@@ -365,7 +368,11 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
             if debug:
                 print(f"generating neighbours for {len(nodes_to_generate_neighbours_for)} nodes")
             for node in nodes_to_generate_neighbours_for:
-                solutions = generate_neighbour_states(node[1], graph_hash_map=graph_hash_map)
+                solutions = generate_neighbour_states(node[1])
+                # for solution in solutions:
+                #     draw_graph(solution, f"Neighbour {solution}")
+                #     input("press enter to continue")
+
                 perfect_solution = attach_solutions(node, solutions)
                 if perfect_solution is not None:
                     if debug:
@@ -441,14 +448,13 @@ def plot_simulated_anealnealing_solution_space(solution):
     #add node to graph
     graph.add_node(pod[0], **pod[1])
     #try all node-pod connections
-    set_of_nodes = list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")
-    set_of_pods = list(pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod")
-    assignments = list(itertools.product(set_of_nodes, set_of_pods))
+ 
+    assignments = list(itertools.product(get_node_ids(graph), get_pod_ids(graph)))
     solutions_checked = 0
     solution_array = []
     if debug:
         print(assignments)
-    combinations = list(itertools.combinations(assignments, len(set_of_pods)))
+    combinations = list(itertools.combinations(assignments, len(get_pod_ids(graph))))
     if debug:
         print(combinations)
     
@@ -514,7 +520,7 @@ def plot_simulated_anealnealing_solution_space(solution):
 
     return graph
 
-def kubernetes_default(graph, pods=None, debug=False, visualize=True):
+def kubernetes_default(graph: nx.DiGraph, pods=None, debug=False, visualize=True):
     for pod in pods:
         feasible_nodes = list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")
         ## Stage 1: Filtering
@@ -540,20 +546,20 @@ def kubernetes_default(graph, pods=None, debug=False, visualize=True):
         for node in [node for node in feasible_nodes]:
             cpu_load = 0
             mem_load = 0
-            for neighbour in [neighbour for neighbour in graph.neighbors(node) if graph.nodes[neighbour]["type"] == "pod"]:
-                    cpu_load += graph.nodes[neighbour]["cpu"]
-                    mem_load += graph.nodes[neighbour]["mem"]
+            for pod_id in get_assigned_pod_ids(graph, node):
+                    cpu_load += graph.nodes[pod_id]["cpu"]
+                    mem_load += graph.nodes[pod_id]["mem"]
             if cpu_load + pod[1]["cpu"] > graph.nodes[node]["cpu"] or mem_load + pod[1]["mem"] > graph.nodes[node]["mem"]:
                 feasible_nodes.remove(node)
 
         ## Stage 2: Scoring
         scored_nodes = [ (node, 0) for node in feasible_nodes ]
         ## Aim for an even distribution
-        num_pods = len([node for node in graph.nodes if graph.nodes[node]["type"] == "pod"]) + 1
-        num_nodes = len([node for node in graph.nodes if graph.nodes[node]["type"] == "node"])
+        num_pods = len(get_pod_ids(graph)) + 1
+        num_nodes = len(get_node_ids(graph))
         avg_pods_per_node = num_pods / num_nodes
         for node in scored_nodes:
-            num_scheduled_pods = len([neighbour for neighbour in graph.neighbors(node[0]) if graph.nodes[neighbour]["type"] == "pod"])
+            num_scheduled_pods = len(get_assigned_pod_ids(graph, node[0]))
             if num_scheduled_pods > avg_pods_per_node:
                 continue
             else:
