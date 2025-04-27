@@ -5,6 +5,7 @@ from random import Random
 import network_administration
 import metrics
 import Time as time
+from utils import *
 
 rnd = Random()
 rnd.seed(conf.random_seed)
@@ -27,7 +28,7 @@ while time.current_time_step() < 1440:
     # randomely invoke the chaos monkey
     if rnd.random() < conf.node_delete_probability:
         print(f"chaos monkey invoked at {time.current_time_step()}")
-        if len([node for node in k8.graph.nodes if k8.graph.nodes[node]["type"] == "node"]) > 1:
+        if len(get_node_ids(k8.graph)) > 1:
             chaos_monkey.delete_node(k8.graph)
             pass
     if rnd.random() < conf.pod_delete_probability:
