@@ -13,7 +13,7 @@ small_graph={
               (2, {"type": "node", "cpu": 100, "mem": 100}),
               (3, {"type": "node", "cpu": 100, "mem": 100}),
               (4, {"type": "node", "cpu": 100, "mem": 100}),],
-    "edges": [(1, 2, {"throughput": 5, "latency": 2}), (1, 3, {"throughput": 1, "latency": 3}), (2, 4, {"throughput": 3, "latency": 4}), (3, 4, {"throughput": 10, "latency": 10})],
+    "edges": [(1, 2, {"throughput": 5, "latency": 2}), (1, 3, {"throughput": 1, "latency": 3}), (2, 4, {"throughput": 3, "latency": 4}), (3, 4, {"throughput": 10, "latency": 10}), (4, 3, {"throughput": 10, "latency": 10}), (4, 2, {"throughput": 10, "latency": 10}), (3, 1, {"throughput": 10, "latency": 10}), (2, 1, {"throughput": 10, "latency": 10})],
     "pos": {1: [-0.34833021,  0.09425495], 2: [ 0.01927328, -0.07205069], 3: [-0.43677531,  0.66727785], 4: [ 0.50957367, -0.06202244], 5: [0.98649442, 0.24973923], 6: [-0.84259233, -0.21467222], 7: [-0.89098206,  0.34020218], 8: [ 0.00333854, -0.64498511], 9: [ 1, -0.35774376]}
 }
 
@@ -114,7 +114,7 @@ enable_metrics = False
 graph = small_graph
 deployment = small_deployment
 
-algorithm = kubernetes_default
+algorithm = ant_colony_solve
 
 
 metrics_name_postfix = "k8"
@@ -126,6 +126,7 @@ unconnected_pod_penalty = 500
 label_penalty = 1000
 latency_penalty = 100
 throughput_penalty = 10 # calculated like this: penalty = throughput_penalty * (wanted_throughput - actual_throughput)
+spread_penalty = 10 # added for every pod to many or to little from the average
 
 # Stability is calculated like this: penalty = stability_penalty * floating_average_of_crashes
 stability_penalty = 10
