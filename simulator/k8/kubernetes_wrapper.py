@@ -20,7 +20,10 @@ class Kubernetes:
         create_metric('links_online')
         create_metric('num_eval_func_calls')
         create_metric('network_penalty')
-
+        create_metric('labels_penalty')
+        create_metric('node_stability_penalty')
+        create_metric('spread_penalty')
+        create_metric('resources_penalty')
 
     def tick(self):
         if self.current_deployment is not None:
@@ -37,7 +40,7 @@ class Kubernetes:
             if len(pods_to_schedule) > 0:
                 print(f"{__name__}: Pod(s) {pods_to_schedule} are not running")
                 new_graph = self.scheduler.schedule(pods_to_schedule, self.graph)
-                evaluation = evaluate_step(self.graph, new_graph, debug=False)
+                evaluation = evaluate_step(self.graph, new_graph, debug=True, record_metrics=True)
                 print(f"{__name__}: Evaluation: {evaluation}")
                 update_metric('evaluation', evaluation)
                 
