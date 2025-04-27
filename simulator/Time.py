@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 
 
 saved_state=None
-simulated_time = datetime(2020, 1, 1, 00, 00, 00)
-time_step = 0
+simulated_time: datetime = datetime(2020, 1, 1, 00, 00, 00)
+time_step: int = 0
 
 
 def increment_time():
@@ -31,19 +31,19 @@ def current_time_step() -> int:
     """
     return time_step
 
-def timestep_to_time(timestep) -> datetime:
+def timestep_to_time(timestep: int) -> datetime:
     """
     converts an integer timestep into a python time object
     """
     return datetime(2020, 1, 1, 00, 00, 00) + timedelta(minutes=timestep*1)
 
-def time_to_timestep(time) -> int:
+def time_to_timestep(time: datetime) -> int:
     """
     converts time object into an integer timestep
     """
     return int((time - Configurations.start_time).total_seconds() / 60 /15)
 
-def sql_time(time_obj):
+def sql_time(time_obj: datetime):
     """
     converts a time object into valid sql time
     """
