@@ -7,8 +7,10 @@ import Time as time
 import network_administration
 import conf
 import metrics
+from utils import *
+import visualizer
 
-def network_penalty(graph, debug=False):
+def network_penalty(graph: nx.Graph, debug=False):
     val = 0
     unconnected_pod_penalty = conf.unconnected_pod_penalty
     latency_penalty = conf.latency_penalty
@@ -19,84 +21,77 @@ def network_penalty(graph, debug=False):
     for edge in (edge for edge in graph.edges if graph.edges[edge].get("type") == "connection"):
         graph.edges[edge]["wanted_service"] = {(edge[0], edge[1]):LinearFunction(0, 0, 0), (edge[1], edge[0]):LinearFunction(0, 0, 0)}
 
-    for pod in graph.nodes:
-        if graph.nodes[pod]["type"] == "pod":
-            if graph.neighbors(pod) == []:
-                val += unconnected_pod_penalty
+    for pod_id in get_pod_ids(graph):
+        assigned_node_id = get_assigned_node_id(graph, pod_id)
+        if assigned_node_id == None:
+            val += unconnected_pod_penalty
+            continue
+        for connection in graph.nodes[pod_id]["network"]:
+            start = assigned_node_id
+            # find ending node pod
+            if connection[0] not in graph  or get_assigned_node_id(graph, connection[0]) == None:
+                if debug: print(f"Pod {pod_id} wants to connect to unscheduled Pod {connection[0]}!")
                 continue
-            for connection in graph.nodes[pod]["network"]:
-                # find starting node pod
-                adjacent_nodes = list(graph.neighbors(pod))
-                if(len(adjacent_nodes) == 0):
-                    val += 1000
-                    if debug: print(f"Pod {pod} has not been scheduled!")
-                    continue
-                start = adjacent_nodes[0]
-                # find ending node pod
-                if(connection[0] not in graph.nodes) or len(list(graph.neighbors(connection[0]))) == 0:
-                    if debug: print(f"Pod {pod} wants to connect to unscheduled Pod {connection[0]}!")
-                    continue
-                end = list(graph.neighbors(connection[0]))[0]
-                try:
-                    shortest_path = nx.shortest_path(graph, start, end, "latency")
-                except nx.NetworkXNoPath:
-                    if debug: print(f"Pod {pod} wants to connect to unscheduled Pod {connection[0]}!")
-                    continue
+            end = get_assigned_node_id(graph, connection[0])
+            try:
+                shortest_path = nx.shortest_path(graph, start, end, "latency")
+            except nx.NetworkXNoPath:
+                if debug: print(f"Pod {pod_id} wants to connect to unscheduled Pod {connection[0]}!")
+                continue
+            
+            if debug: print(f"Shortest path from {start} to {end} is {shortest_path}")
+
+            last_additional_output = LinearFunction(connection[2], 0, 0)
+
+
+            accumulated_latency = 0
+            for step in range(len(shortest_path) - 1):
                 
-                if debug: print(shortest_path)
+                if debug: print(f"latest additional output: {last_additional_output}")
+                link = graph.edges[( shortest_path[step],shortest_path[step+1])]
+                accumulated_latency += link["latency"]
+                old_link_wanted_service = link["wanted_service"][(shortest_path[step],shortest_path[step+1])]
 
-                last_additional_output = LinearFunction(connection[2], 0, 0)
-
-
-                accumulated_latency = 0
-                for step in range(len(shortest_path) - 1):
-                    
-                    if debug: print(f"latest additional output: {last_additional_output}")
-                    link = graph.edges[( shortest_path[step],shortest_path[step+1])]
-                    accumulated_latency += link["latency"]
-                    old_link_wanted_service = link["wanted_service"][(shortest_path[step],shortest_path[step+1])]
-
-                    new_link_wanted_service = multiply(last_additional_output, old_link_wanted_service)
-                    link["wanted_service"][(shortest_path[step],shortest_path[step+1])] = new_link_wanted_service
-                    if old_link_wanted_service.m > link['service'].m:
-                        last_additional_output = LinearFunction(0, 0, 0)
+                new_link_wanted_service = multiply(last_additional_output, old_link_wanted_service)
+                link["wanted_service"][(shortest_path[step],shortest_path[step+1])] = new_link_wanted_service
+                if old_link_wanted_service.m > link['service'].m:
+                    last_additional_output = LinearFunction(0, 0, 0)
+                else:
+                    if new_link_wanted_service.m <= link['service'].m:
+                        last_additional_output = last_additional_output
                     else:
-                        if new_link_wanted_service.m <= link['service'].m:
-                            last_additional_output = last_additional_output
-                        else:
-                            last_additional_output = devide(link['service'], old_link_wanted_service)
+                        last_additional_output = devide(link['service'], old_link_wanted_service)
 
-                    # In this case we have a higher usage then we can serve - this leads to a peanlty
-                    if new_link_wanted_service.m > link['service'].m:
-                        val += throughput_penalty * (new_link_wanted_service.m - link['service'].m)
-                # print("accumulated latency", accumulated_latency)
-                val += latency_penalty * accumulated_latency
+                # In this case we have a higher usage then we can serve - this leads to a peanlty
+                if new_link_wanted_service.m > link['service'].m:
+                    val += throughput_penalty * (new_link_wanted_service.m - link['service'].m)
+            # print("accumulated latency", accumulated_latency)
+            val += latency_penalty * accumulated_latency
 
     if debug: print([graph.edges[edge] for edge in graph.edges if "type" in graph.edges[edge] and graph.edges[edge]["type"] == "connection"])
     return val
 
-def resources_penalty(graph, debug=False):
+def resources_penalty(graph: nx.DiGraph, debug=False):
     # See if nodes are overloaded
     val = 0
-    for node in graph.nodes:
-        if graph.nodes[node]["type"] == "node":
-            cpu_load = 0
-            mem_load = 0
-            for neighbour in graph.neighbors(node):
-                if graph.nodes[neighbour]["type"] == "pod":
-                    cpu_load += graph.nodes[neighbour]["cpu"]
-                    mem_load += graph.nodes[neighbour]["mem"]
-            if cpu_load - graph.nodes[node]["cpu"] > 0:
-                val += cpu_load - graph.nodes[node]["cpu"]
-            if mem_load - graph.nodes[node]["mem"] > 0:
-                val += mem_load - graph.nodes[node]["mem"]
-            if debug:
-                print(f"node {node}: cpu {cpu_load}/{graph.nodes[node]['cpu']} | mem {mem_load}/{graph.nodes[node]['mem']}")
+    for node in get_node_ids(graph):
+        cpu_load = 0
+        mem_load = 0
+        for pod_id in get_assigned_pod_ids(graph, node):
+            if graph.nodes[pod_id]["type"] == "pod":
+                cpu_load += graph.nodes[pod_id]["cpu"]
+                mem_load += graph.nodes[pod_id]["mem"]
+        if cpu_load - graph.nodes[node]["cpu"] > 0:
+            val += cpu_load - graph.nodes[node]["cpu"]
+        if mem_load - graph.nodes[node]["mem"] > 0:
+            val += mem_load - graph.nodes[node]["mem"]
+        if debug:
+            print(f"node {node}: cpu {cpu_load}/{graph.nodes[node]['cpu']} | mem {mem_load}/{graph.nodes[node]['mem']}")
     return val
 
 def labels_penalty(graph, debug=False):
     val = 0
-    for pod in (pod for pod in graph.nodes if graph.nodes[pod]["type"] == "pod"):
+    for pod in get_pod_ids(graph):
         if "labelSelector" not in graph.nodes[pod]:
             if debug: print(f"Pod {pod} has no labelSelector")
             continue
@@ -120,11 +115,11 @@ def labels_penalty(graph, debug=False):
         
     return val
 
-def node_stability_penalty(graph, debug=False):
+def node_stability_penalty(graph: nx.DiGraph, debug=False):
     stability_penalty = conf.stability_penalty
     floating_average_window = conf.floating_average_window
-    for node in (node for node in graph.nodes if graph.nodes[node]["type"] == "node"):
-        amount_of_assigned_pods = len(list(pod for pod in list(graph.neighbors(node)) if graph.nodes[pod]["type"] == "pod"))
+    for node in get_node_ids(graph):
+        amount_of_assigned_pods = len(get_assigned_pod_ids(graph, node))
         floating_average_of_crashes = 0
         if not node in network_administration.node_failures: pass
         else: 
@@ -137,28 +132,53 @@ def node_stability_penalty(graph, debug=False):
     val = stability_penalty * floating_average_of_crashes
     return val
 
-def spread_penalty(graph, debug=False):
+def spread_penalty(graph: nx.DiGraph, debug=False):
     val = 0
+     ## Aim for an even distribution
+    num_pods = len(get_pod_ids(graph)) + 1
+    num_nodes = len(get_node_ids(graph))
+    avg_pods_per_node = num_pods / num_nodes
+
+    for node in get_node_ids(graph):
+        pods_per_node = len(get_assigned_pod_ids(graph, node))
+        val += abs(pods_per_node - avg_pods_per_node) * conf.spread_penalty
     return val
 
-def evaluate(graph, debug=False):
+def evaluate(graph, debug=False, record_metrics=False):
     # Remove all wanted connections (they are unwanted)
     graph.remove_edges_from((edge for edge in graph.edges if graph.edges[edge]["type"] == "wanted_connection"))
     
-    if debug: print("-"*50)
     val = 0
-    val += resources_penalty(graph, debug)
-    net_pen = network_penalty(graph, debug)
-    metrics.update_metric('network_penalty', net_pen)
-    val += net_pen
-    val += labels_penalty(graph, debug)
-    val += node_stability_penalty(graph, debug)
-    val += spread_penalty(graph, debug)
-    if debug:print(f"Evaluation: {round(val, 2)}")
+    resources_penalty_value = resources_penalty(graph, False)
+    val += resources_penalty_value
+    network_penalty_value = network_penalty(graph, False)
+    val += network_penalty_value
+    labels_penalty_value = labels_penalty(graph, False)
+    val += labels_penalty_value
+    node_stability_penalty_value = node_stability_penalty(graph, False)
+    val += node_stability_penalty_value
+    spread_penalty_value = spread_penalty(graph, False)
+    val += spread_penalty_value
+
+    if record_metrics:
+        metrics.update_metric('resources_penalty', resources_penalty_value)
+        metrics.update_metric('labels_penalty', labels_penalty_value)
+        metrics.update_metric('node_stability_penalty', node_stability_penalty_value)
+        metrics.update_metric('spread_penalty', spread_penalty_value)
+        metrics.update_metric('network_penalty', network_penalty_value)
+    if debug:
+        print("-"*50)
+        print(f"Resources penalty: {resources_penalty_value}")
+        print(f"Network penalty: {network_penalty_value}")
+        print(f"Labels penalty: {labels_penalty_value}")
+        print(f"Node stability penalty: {node_stability_penalty_value}")
+        print(f"Spread penalty: {spread_penalty_value}")
+        print(f"Evaluation: {round(val, 2)}")
+
     return round(val, 2)
 
-def evaluate_step(old_graph, new_graph, debug=False):
-    val = evaluate(new_graph, False)
+def evaluate_step(old_graph, new_graph, debug=False, record_metrics=False):
+    val = evaluate(new_graph, debug)
     # check if a pod moved to a new node in the new graph
     # get all 'assign' connections in both graphs and compare them
     move_pod_penalty = conf.move_pod_penalty
