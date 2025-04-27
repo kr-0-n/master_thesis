@@ -6,7 +6,7 @@ database_cursor=None
 name=None
 
 record_metrics=True
-def update_metric(metric, value):
+def update_metric(metric: str, value: float):
     """
     Update metrics with new values.
     """
@@ -18,7 +18,7 @@ def update_metric(metric, value):
     # print(f"updated {metric} with {value}")
     database_connection.commit()
 
-def create_metric(metric):
+def create_metric(metric: str):
     """
     Create a new metric with the given id.
     """
