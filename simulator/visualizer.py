@@ -23,7 +23,7 @@ def vertex_styles(kind):
 
 def edge_styles(kind, link):
     if kind == "wanted_connection":
-        return {"label": str(link["latency"]) + "ms " + str(link["throughput"]) + "mbps", "weight": 1}
+        return {"label": str(link["latency"]) + "ms " + str(link["throughput"]) + "mbps", "weight": 1, "colorscheme": "greens3", "style": "filled", "color": "2", "fillcolor": "1"}
     elif kind == "connection":
         max_line_width = 3
         min_line_width = 0.5
@@ -40,7 +40,7 @@ def edge_styles(kind, link):
     elif kind == "assign":
         return {"len": 0.2}
 
-def draw_graph(graph,  title, graph_data=None):
+def draw_graph(graph,  title):
     for pod in graph.nodes:
         if graph.nodes[pod]["type"] == "pod":
             for connection in graph.nodes[pod]["network"]:
