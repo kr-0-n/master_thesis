@@ -118,6 +118,7 @@ def labels_penalty(graph, debug=False):
 def node_stability_penalty(graph: nx.DiGraph, debug=False):
     stability_penalty = conf.stability_penalty
     floating_average_window = conf.floating_average_window
+    val = 0
     for node in get_node_ids(graph):
         amount_of_assigned_pods = len(get_assigned_pod_ids(graph, node))
         floating_average_of_crashes = 0
@@ -129,7 +130,7 @@ def node_stability_penalty(graph: nx.DiGraph, debug=False):
             floating_average_of_crashes = crashes / floating_average_window
             if debug: print(f"node {node} has {amount_of_assigned_pods} pods assigned and has a floating average of {crashes} crashes")
         
-    val = stability_penalty * floating_average_of_crashes
+        val += stability_penalty * floating_average_of_crashes
     return val
 
 def spread_penalty(graph: nx.DiGraph, debug=False):
@@ -137,6 +138,7 @@ def spread_penalty(graph: nx.DiGraph, debug=False):
      ## Aim for an even distribution
     num_pods = len(get_pod_ids(graph)) + 1
     num_nodes = len(get_node_ids(graph))
+    if num_nodes == 0: return val
     avg_pods_per_node = num_pods / num_nodes
 
     for node in get_node_ids(graph):
@@ -181,7 +183,7 @@ def evaluate_step(old_graph, new_graph, debug=False, record_metrics=False):
     val = evaluate(new_graph, debug)
     # check if a pod moved to a new node in the new graph
     # get all 'assign' connections in both graphs and compare them
-    move_pod_penalty = conf.move_pod_penalty
+    move_pod_penalty = 0
     old_assignments = []
     new_assignments = []
     for edge in old_graph.edges:
@@ -193,8 +195,13 @@ def evaluate_step(old_graph, new_graph, debug=False, record_metrics=False):
     if debug:
         print(f"Old assignments: {old_assignments}")
         print(f"New assignments: {new_assignments}")
+    
     for assignment in old_assignments:
         if assignment not in new_assignments:
-            val += move_pod_penalty
+            move_pod_penalty += conf.move_pod_penalty
+    
+    if record_metrics:
+        metrics.update_metric('move_pod_penalty', move_pod_penalty)
+    val += move_pod_penalty
     if debug:print(f"Evaluation: {round(val, 2)}")
     return round(val, 2)
