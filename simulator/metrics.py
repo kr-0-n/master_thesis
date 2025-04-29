@@ -5,7 +5,7 @@ database_connection=None
 database_cursor=None
 name=None
 
-record_metrics=True
+record_metrics=False
 def update_metric(metric: str, value: float):
     """
     Update metrics with new values.
@@ -32,15 +32,17 @@ def create_metric(metric: str):
 
 def initialize(algorithm_name: str, run: int):
     global record_metrics
+    # This is slightly hacky but avoids partial imports
+    import conf
+    record_metrics = conf.enable_metrics
     if not record_metrics: return    
     global name
     name = f"k8_simulation_{run}_{algorithm_name}"    
     print(name)
     mydb = mysql.connector.connect(
-        host="127.0.0.1",
-        user="root",
-        password="root",
-
+        host=conf.database_host,
+        user=conf.database_user,
+        password=conf.database_password
     )
     mycursor = mydb.cursor(buffered=True)
     mycursor.execute(f"CREATE DATABASE {name}")
@@ -50,9 +52,9 @@ def initialize(algorithm_name: str, run: int):
     global database_cursor
 
     database_connection = mysql.connector.connect(
-        host="127.0.0.1",
-        user="root",
-        password="root",
+        host=conf.database_host,
+        user=conf.database_user,
+        password=conf.database_password,
         database=name
     )
     database_cursor = database_connection.cursor()
