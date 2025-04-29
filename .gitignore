@@ -18,3 +18,6 @@ api_server/database.db
 # no .dot, not .png. Not on my watch at least
 *.png
 *.dot
+
+# absolutely no drawio
+*.drawio

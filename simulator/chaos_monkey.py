@@ -5,34 +5,39 @@ rnd =None
 The chaos monkey creates chaos by deleting nodes, pods, and links. Beware, they are randomly chosen.
 """
 
-def delete_node(graph: nx.DiGraph):
+def delete_nodes(graph: nx.DiGraph):
     global rnd
-    # remove random node and all adjacent assigned pods
-    node = rnd.choice(list(node for node in graph.nodes if graph.nodes[node]["type"] == "node"))
-    print(f"{__name__}: Deleting node {node}")
-    graph.remove_node(node)
+    for node in get_node_ids(graph):
+        node_stability = graph.nodes[node]["stability"]
+        if node_stability == None: 
+            print(f"{__name__}: Node {node} has no stability")
+            node_stability = 0.5 # Node stability hasnt been set. Default to 0.5
+        if rnd.random() > node_stability:
+            graph.remove_node(node)
     return graph
 
-def delete_pod(graph: nx.DiGraph):
+def delete_pods(graph: nx.DiGraph):
     global rnd
-    pods = get_pod_ids(graph)
-
-    if pods:
-        pod = rnd.choice(pods)
-        print(f"{__name__}: Deleting pod {pod}")
-        graph.remove_node(pod)
-    else:
-        # Dummy RNG call to maintain sync
-        _ = rnd.random()
+    for pod in get_pod_ids(graph):
+        pod_stability = graph.nodes[pod]["stability"]
+        if pod_stability == None: 
+            print(f"{__name__}: Pod {pod} has no stability")
+            pod_stability = 0.5 # Pod stability hasnt been set. Default to 0.5
+        if rnd.random() > pod_stability:
+            graph.remove_node(pod)
     return graph
 
-def delete_link(graph: nx.DiGraph):
+def delete_links(graph: nx.DiGraph):
     global rnd
     available_links = list(link for link in graph.edges if "type" in graph.edges[link] and graph.edges[link]["type"] == "connection")
     # print(f"{__name__}: Available Connections: {available_links}")
     if len(available_links) == 0:
         return graph
-    link = rnd.choice(available_links)
-    print(f"{__name__}: Deleting link {link}")
-    graph.remove_edge(link[0], link[1])
+    for link in available_links:
+        link_stability = graph.edges[link]["stability"]
+        if link_stability == None: 
+            print(f"{__name__}: Link {link} has no stability")
+            link_stability = 0.5 # Link stability hasnt been set. Default to 0.5
+        if rnd.random() > link_stability:
+            graph.remove_edge(link[0], link[1])
     return graph
