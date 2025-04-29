@@ -55,5 +55,5 @@ def reset_time():
     """
     global simulated_time
     global time_step
-    simulated_time = Configurations.start_time
+    simulated_time = datetime(2020, 1, 1, 00, 00, 00)
     time_step = 0
