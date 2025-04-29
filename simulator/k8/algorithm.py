@@ -9,6 +9,7 @@ import math
 import numpy as np
 from metrics import update_metric
 from utils import *
+import hashlib
 
 rnd: Random = Random()
 rnd.seed(10)
@@ -31,7 +32,7 @@ def random(graph: nx.Graph, pod=None, debug=False, visualize=False):
     #attach new node to random existing node
     graph.add_edge(pod[0], rnd.choice(get_node_ids(graph)),  type="assign")
     #graph.add_edge(1 , node[0])
-    update_metric("num_eval_func_calls", 0)
+    # update_metric("num_eval_func_calls", 0)
     return graph
 
 def assign_pods_to_nodes(nodes, pods):
@@ -155,6 +156,12 @@ def evolutionary_solve(graph, pods=None, debug=False, visualize=False):
     #print(f"checked {generations * chilren_per_parent * survivors_per_generation} combinations")
     update_metric("num_eval_func_calls", generations * chilren_per_parent * survivors_per_generation)
     return current_best[1]
+
+def graph_hash(graph: nx.DiGraph) -> int:
+    hash_string = ""
+    hash_string += str(sorted(list(graph.nodes)))
+    hash_string += str(sorted(list(graph.edges)))
+    return int(hashlib.md5(hash_string.encode()).hexdigest(), 16)
 def generate_neighbour_states(graph: nx.DiGraph, graph_hash_map: dict[str, nx.Graph] = None) -> list[nx.Graph]:
     """
     Generate a list of neighbor states by removing an existing edge from the graph and adding a new edge connecting a node to the pod.
@@ -168,14 +175,16 @@ def generate_neighbour_states(graph: nx.DiGraph, graph_hash_map: dict[str, nx.Gr
         The function assumes that the graph is a NetworkX graph object and that the pods and nodes have the "type" attribute set to "pod" and "node", respectively.
     """
 
+
     def cache_graph_hash(graph: nx.DiGraph, graph_hash_map: dict[str, nx.Graph]) -> nx.Graph:
-        if graph == None or graph_hash_map == None:
+        if graph == None or cache_graph_hash_map == None:
             return
-        graph_hash = nx.weisfeiler_lehman_graph_hash(graph)
-        if graph_hash not in graph_hash_map:
-            graph_hash_map[graph_hash] = graph
-        return graph_hash_map[graph_hash]
+        cache_graph_hash_map = graph_hash(graph)
+        if cache_graph_hash_map not in graph_hash_map:
+            cache_graph_hash_map[graph_hash] = graph.copy()
+        return cache_graph_hash_map[graph_hash]
         
+    
     set_of_nodes = get_node_ids(graph)
     set_of_pods = get_pod_ids(graph)
     solutions = []
@@ -188,7 +197,7 @@ def generate_neighbour_states(graph: nx.DiGraph, graph_hash_map: dict[str, nx.Gr
             new_graph = new_graph
             # if debug: print(f"Pod {pod_id} has no neighbor")
         if graph_hash_map != None:
-            solutions.append(cache_graph_hash(new_graph, graph_hash_map))
+            solutions.append(graph_hash(new_graph, graph_hash_map))
         else:
             solutions.append(new_graph)
         for node in set_of_nodes:
@@ -230,13 +239,17 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
             first_solution = random(first_solution, pod, debug=debug, visualize=visualize)
     ant_solution_graph = nx.DiGraph()
     root_node = (evaluate_step(graph, first_solution, debug=False), first_solution) # syntax for an entry in the ant solution graph: (evaluation, graph)
-    ant_solution_graph.add_node(root_node, type="solution", color='blue') 
-    amount_of_ants = 10
+    ant_solution_graph.add_node(root_node, type="solution") 
+    amount_of_ants = 5
     moves_per_ant = 10
-    pheromone_evaporation = 0.9
+    pheromone_evaporation = 0.5
     rounds = 10
     graph_hash_map = {}
-    pheromone_constant = 5000
+    pheromone_constant = 50000
+    initial_pheromone = 0.1
+    alpha = 1
+    beta = 1
+    heuristic_multiplier_for_worse_solutions = 0
     if debug:
         print(f"ACO configuration: amount_of_ants={amount_of_ants}, moves_per_ant={moves_per_ant}, pheromone_evaporation={pheromone_evaporation}")
     # Add ants to the ant_solution_graph
@@ -244,6 +257,11 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
         ant_solution_graph.add_node(i, type="ant", color='green')
         ant_solution_graph.add_edge(i,root_node, type="sits")
 
+
+    def heuristic(edge: tuple):
+        if edge[1][0] > edge[0][0]:
+            return ((edge[1][0]-edge[0][0])/edge[1][0]) * heuristic_multiplier_for_worse_solutions
+        return (edge[0][0]-edge[1][0])/edge[0][0]*100
 
 
     
@@ -255,14 +273,15 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
         out_edges = list(ant_solution_graph.out_edges(node))
         probability = []
         for out_edge in out_edges:
-            try:
-                heuristic = max((out_edge[1][0]-out_edge[0][0])+pheromone_constant, 0) 
-                # print("heuristic", heuristic)
-            except(ZeroDivisionError):
-                heuristic = math.inf
+            edge_heuristic = heuristic(out_edge)
             pheromone = ant_solution_graph.edges[out_edge]["pheromone"]
             try:
-                probability.append((pheromone*heuristic)/(sum([ant_solution_graph.edges[e]["pheromone"]*heuristic for e in out_edges])))
+                numerator = math.pow(pheromone, alpha)*math.pow(edge_heuristic, beta)
+                denominator = sum([math.pow(ant_solution_graph.edges[e]["pheromone"], alpha) * math.pow(heuristic(e), beta) for e in out_edges])
+
+                probability.append(numerator/denominator)
+                if debug: print("Edge with pheromone", ant_solution_graph.edges[out_edge]["pheromone"], "and heuristic", edge_heuristic, "has probability", probability[-1])
+
             except(ZeroDivisionError):
                 probability.append(0.001)
         # generate random number between 0 and sum(probability)
@@ -288,6 +307,7 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
                 # ant_solution_graph.edges[edge]["weight"] = ant_solution_graph.edges[edge]["pheromone"] * 10000
                 ant_solution_graph.edges[edge]["len"] = 0.0001
                 ant_solution_graph.edges[edge]["label"] = str(round(ant_solution_graph.edges[edge]["pheromone"], 2))
+                ant_solution_graph.edges[edge]["width"] = min(3, ant_solution_graph.edges[edge]["pheromone"]/100)
             elif ant_solution_graph.edges[edge]["type"] == "sits":
                 ant_solution_graph.edges[edge]["len"] = 0.0005
         for node in ant_solution_graph.nodes:
@@ -303,20 +323,23 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
         print(f"ACO graph written to {dot_file}")
         input("press enter to continue")
 
-    def attach_solutions(node, solution_list):
+    def attach_solutions(node, solution_list, node_hash_map={}):
         global rnd
         perfect_solution = None
-        currently_attached_solution_hashes = [ nx.weisfeiler_lehman_graph_hash(solution_node[1]) for solution_node in ant_solution_graph.neighbors(node) if ant_solution_graph.nodes[solution_node]["type"] == "solution" ]
-        # print("currently attached solution hashes:", currently_attached_solution_hashes)
+
         for solution in solution_list:
-            if nx.weisfeiler_lehman_graph_hash(solution) in currently_attached_solution_hashes:
-                continue
-            solution_node = (evaluate_step(graph, solution, debug=False), solution, int(rnd.random() * 10000000000))
+            if graph_hash(solution) not in node_hash_map:
+                solution_node = (evaluate_step(graph, solution, debug=False), solution) # Add a random number to make it 
+                node_hash_map[graph_hash(solution)] = solution_node
+            else:
+                solution_node = node_hash_map[graph_hash(solution)]
+
             if(solution_node[0] == 0):
                 # best possible solution was found
                 perfect_solution = solution_node[1]
-            ant_solution_graph.add_node(solution_node, type="solution", color='lightblue')
-            ant_solution_graph.add_edge(node, solution_node, type="solution", pheromone=0.5)
+            if not ant_solution_graph.has_node(solution_node): ant_solution_graph.add_node(solution_node, type="solution", color='blue')
+            ant_solution_graph.add_edge(node, solution_node, type="solution", pheromone=initial_pheromone)
+            # print("attached new solution")
         return perfect_solution
 
     def update_pheromones():
@@ -336,7 +359,7 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
                     if edge in path:
                          ant_solution_graph.edges[edge]["pheromone"] += pheromone_constant/path[-1][1][0] # pheromone_constant/the_value_of_the_solution_the_ant_is_on
             else:
-                ant_solution_graph.edges[edge]["pheromone"] = 0.5
+                ant_solution_graph.edges[edge]["pheromone"] = initial_pheromone
     
     def reset_ants():
         # Detach ants from their current node
@@ -355,7 +378,9 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
                 ant_solution_graph.edges[edge]["pheromone"] *= pheromone_evaporation
 
 
+    node_hash_map = {}
     for current_round in range(rounds):
+        # print(f"round {current_round}")
         for move in range(moves_per_ant):
             # for every solution node with an ant, generate the neighbour states
             # and attach the solutions to the graph
@@ -373,13 +398,13 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
                 #     draw_graph(solution, f"Neighbour {solution}")
                 #     input("press enter to continue")
 
-                perfect_solution = attach_solutions(node, solutions)
+                perfect_solution = attach_solutions(node, solutions, node_hash_map)
                 if perfect_solution is not None:
                     if debug:
                         print(f"perfect solution found: {perfect_solution}")
                     if visualize:
                         draw_ant_graph()
-                    print(f"considered {len([node for node in ant_solution_graph.nodes if ant_solution_graph.nodes[node]['type'] == 'solution'])} solutions")
+                    # print(f"considered {len([node for node in ant_solution_graph.nodes if ant_solution_graph.nodes[node]['type'] == 'solution'])} solutions")
                     update_metric("num_eval_func_calls", len([node for node in ant_solution_graph.nodes if ant_solution_graph.nodes[node]['type'] == 'solution']))
                     return perfect_solution
 
@@ -393,8 +418,8 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
         reset_ants()
     solution_list = list(node for node in ant_solution_graph.nodes if ant_solution_graph.nodes[node]["type"] == "solution")
     solution_list = sorted(solution_list, key=lambda x: x[0])
-    print("best solution:", solution_list[0][0])
-    #print(f"considered {len(solution_list)} solutions")
+    # print("best solution:", solution_list[0][0])
+    # print(f"considered {len(solution_list)} solutions")
     update_metric("num_eval_func_calls", len(solution_list))
     if visualize:
         draw_ant_graph()
@@ -521,6 +546,7 @@ def plot_simulated_anealnealing_solution_space(solution):
     return graph
 
 def kubernetes_default(graph: nx.DiGraph, pods=None, debug=False, visualize=True):
+    graph = graph.copy()
     for pod in pods:
         feasible_nodes = list(node for node in graph.nodes if graph.nodes[node]["type"] == "node")
         ## Stage 1: Filtering
