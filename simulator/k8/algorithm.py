@@ -328,17 +328,20 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
         perfect_solution = None
 
         for solution in solution_list:
-            if graph_hash(solution) not in node_hash_map:
-                solution_node = (evaluate_step(graph, solution, debug=False), solution) # Add a random number to make it 
-                node_hash_map[graph_hash(solution)] = solution_node
+            solution_hash = graph_hash(solution)
+            if solution_hash not in node_hash_map:
+                solution_node = (evaluate_step(graph, solution, debug=False), solution) # syntax for an entry in the ant solution graph: (evaluation, graph)
+                node_hash_map[solution_hash] = solution_node
             else:
-                solution_node = node_hash_map[graph_hash(solution)]
+                solution_node = node_hash_map[solution_hash]
 
             if(solution_node[0] == 0):
                 # best possible solution was found
                 perfect_solution = solution_node[1]
-            if not ant_solution_graph.has_node(solution_node): ant_solution_graph.add_node(solution_node, type="solution", color='blue')
-            ant_solution_graph.add_edge(node, solution_node, type="solution", pheromone=initial_pheromone)
+            if not ant_solution_graph.has_node(solution_node): 
+                ant_solution_graph.add_node(solution_node, type="solution", color='blue')
+            if not ant_solution_graph.has_edge(node, solution_node):
+                ant_solution_graph.add_edge(node, solution_node, type="solution", pheromone=initial_pheromone)
             # print("attached new solution")
         return perfect_solution
 
@@ -389,7 +392,10 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
                 if "type" in ant_solution_graph.nodes[node] and ant_solution_graph.nodes[node]["type"] == "ant":
                     # draw_ant_graph()
                     assert len(list(ant_solution_graph.out_edges(node))) == 1
-                    nodes_to_generate_neighbours_for.add(list(ant_solution_graph.out_edges(node))[0][1])
+                    solution_node_to_generate_neighbors_for = list(ant_solution_graph.out_edges(node))[0][1]
+                    if len(ant_solution_graph.out_edges(solution_node_to_generate_neighbors_for)) == 0: # Don't generate neighbours for nodes that already have solutions attached
+                        nodes_to_generate_neighbours_for.add(solution_node_to_generate_neighbors_for)
+        
             if debug:
                 print(f"generating neighbours for {len(nodes_to_generate_neighbours_for)} nodes")
             for node in nodes_to_generate_neighbours_for:
@@ -421,6 +427,7 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
     # print("best solution:", solution_list[0][0])
     # print(f"considered {len(solution_list)} solutions")
     update_metric("num_eval_func_calls", len(solution_list))
+
     if visualize:
         draw_ant_graph()
     return solution_list[0][1]
