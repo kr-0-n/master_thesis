@@ -108,9 +108,9 @@ def evolutionary_solve(graph, pods=None, debug=False, visualize=False):
         The best graph after performing the evolutionary solve.
     """
     global rnd
-    generations = 10
-    chilren_per_parent = 5
-    survivors_per_generation = 5
+    generations = 100
+    chilren_per_parent = 50
+    survivors_per_generation = 50
 
     initial_unassigned = graph.copy()
 
