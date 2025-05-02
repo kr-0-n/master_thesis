@@ -483,7 +483,9 @@ def simulated_annealing_solve(graph, pods=None, debug=False, visualize=True):
         if temperature <= 0:
             break
 
-        new_solution = rnd.choice(generate_neighbour_states(current_solution))
+        rnd_solution_index = rnd.randint(0, number_neighbour_states(graph) - 1)
+        new_solution = get_neighbour_at_index(current_solution, rnd_solution_index)
+        # new_solution = rnd.choice(generate_neighbour_states(current_solution))
         new_value = evaluate_step(graph, new_solution)
 
         delta_value = new_value - current_value
