@@ -109,8 +109,8 @@ def evolutionary_solve(graph, pods=None, debug=False, visualize=False):
     """
     global rnd
     generations = 100
-    chilren_per_parent = 50
-    survivors_per_generation = 50
+    chilren_per_parent = 35
+    survivors_per_generation = 22
 
     initial_unassigned = graph.copy()
 
@@ -143,7 +143,13 @@ def evolutionary_solve(graph, pods=None, debug=False, visualize=False):
             for i in range(chilren_per_parent):
                 if debug:
                     print(f"Child {i}")
-                new_graph = rnd.choice(generate_neighbour_states(survivors[parent][1]))
+                rand_index = rnd.randint(0, number_neighbour_states(survivors[parent][1]) - 1)
+                # print(f"pick neihgbor number {rand_index}")
+                new_graph = get_neighbour_at_index(survivors[parent][1], rand_index)
+                # neighbors = list(generate_neighbour_states(survivors[parent][1]))
+                # print(f"number neighbors {len(neighbors)}")
+                
+                # new_graph = neighbors[rand_index]
                 # draw_graph(new_graph, conf.small_deployment, "Generation: " + str(generation) + " Parent: " + str(parent) + " Child: " + str(i))
                 children.append((evaluate_step(graph, new_graph, debug=False), new_graph))
         children.sort(key=lambda x: x[0])
@@ -162,11 +168,35 @@ def graph_hash(graph: nx.DiGraph) -> int:
     hash_string += str(sorted(list(graph.nodes)))
     hash_string += str(sorted(list(graph.edges)))
     return int(hashlib.md5(hash_string.encode()).hexdigest(), 16)
+
+def number_neighbour_states(graph: nx.DiGraph) -> int:
+    return len(get_pod_ids(graph)) * (len(get_node_ids(graph)) + 1)
+
+def get_neighbour_at_index(graph: nx.DiGraph, index: int) -> nx.DiGraph:
+    if index < 0 or index >= number_neighbour_states(graph): raise Exception("Index out of range")
+    if graph == None: raise Exception("Graph is None")
+
+    pod_ids = get_pod_ids(graph)
+    node_ids = get_node_ids(graph)
+
+    node_to_pick = (index % (len(node_ids) + 1))-1
+
+    pod_id = pod_ids[index // (len(node_ids) + 1)]
+    node_id = node_ids[node_to_pick]
+
+    new_graph = graph.copy()
+    new_graph.remove_edges_from(list(graph.out_edges(pod_id)) + list(graph.in_edges(pod_id)))
+    if node_to_pick != -1:
+        new_graph.add_edge(pod_id, node_id, type="assign")
+    return new_graph
+
 def generate_neighbour_states(graph: nx.DiGraph, graph_hash_map: dict[str, nx.Graph] = None) -> list[nx.Graph]:
     """
     Generate a list of neighbor states by removing an existing edge from the graph and adding a new edge connecting a node to the pod.
     Parameters:
         graph (nx.Graph): The graph object representing the problem.
+        graph_hash_map (dict, optional): A dictionary mapping graph hashes to graph objects. Defaults to None.
+        index_list (list, optional): A list of indices to generate neighbor states for. Defaults to None.
     Returns:
         list: A list of neighbor states represented as new graphs. Each neighbor state is a graph object with the same nodes as the original graph but with a different edge connecting a node to the pod.
     Description:
@@ -188,7 +218,7 @@ def generate_neighbour_states(graph: nx.DiGraph, graph_hash_map: dict[str, nx.Gr
     set_of_nodes = get_node_ids(graph)
     set_of_pods = get_pod_ids(graph)
     solutions = []
-    for pod_id in set_of_pods:
+    for i, pod_id in enumerate(set_of_pods):
         pod = graph.nodes[pod_id]
         new_graph = graph.copy()
         try:
@@ -200,7 +230,7 @@ def generate_neighbour_states(graph: nx.DiGraph, graph_hash_map: dict[str, nx.Gr
             solutions.append(graph_hash(new_graph, graph_hash_map))
         else:
             solutions.append(new_graph)
-        for node in set_of_nodes:
+        for j, node in enumerate(set_of_nodes):
             new_graph = graph.copy()
             try:
                 new_graph.remove_edge(pod_id, get_assigned_node_id(new_graph, pod_id))
@@ -434,9 +464,9 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
 
 def simulated_annealing_solve(graph, pods=None, debug=False, visualize=True):
     global rnd
-    max_iterations = 150
+    max_iterations = 77000
     initial_temperature = 1000
-    cooling_rate = 0.1
+    cooling_rate = 0.9997
 
     
     first_solution = graph.copy()
