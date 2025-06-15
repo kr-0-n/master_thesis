@@ -22,10 +22,10 @@ mpl.rcParams.update({
     "axes.titlesize": 35,
     "xtick.labelsize": 20,
     "ytick.labelsize": 20,
-    "legend.fontsize": 21,
+    "legend.fontsize": 25,
 })
 
-runs_postfix = ["ant_colony", "evolutionary", "simulated_annealing", "kubernetes_default"]
+runs_postfix = ["ant_colony_250", "evolutionary", "simulated_annealing_250", "kubernetes_default"]
 runs = [f"k8_simulation_{run_id}_{postfix}" for postfix in runs_postfix]
 
 results = []
@@ -39,15 +39,24 @@ for i, run in enumerate(runs):
 
     mycursor = mydb.cursor()
 
-    mycursor.execute(f"SELECT pod_binding_changed as {runs_postfix[i]}, time FROM pod_binding_changed")
+    mycursor.execute(f"SELECT evaluation as {runs_postfix[i]}, time FROM evaluation")
     results.append(mycursor.fetchall())
 
 fig = plt.figure()
 ax = plt.subplot(111)
 
 for i, run in enumerate(results):
-    cumulative_evaluation = [sum(x[0] for x in run[:j+1]) for j in range(len(run))]
-    ax.plot([x[1] for x in run], cumulative_evaluation, label=runs_postfix[i], linewidth=0.8, marker='o', markersize=2)
+    hourly_averages = []
+    times = [x[1] for x in run]
+    values = [x[0] for x in run]
+    
+    for current_time in times:
+        start_time = current_time - datetime.timedelta(hours=1)
+        values_in_last_hour = [value for value, time in zip(values, times) if start_time <= time <= current_time]
+        average = sum(values_in_last_hour) / len(values_in_last_hour) if values_in_last_hour else 0
+        hourly_averages.append(average)
+    
+    ax.plot(times, hourly_averages, label=runs_postfix[i], linewidth=0.8, marker='o', markersize=2)
 
 
 plt.xlim([datetime.date(2020, 1, 1), datetime.date(2020, 1, 2)])  # Adjust the range as needed
@@ -57,8 +66,7 @@ plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
 
 
 plt.xlabel('Time')
-plt.ylabel('Pod Binding Changes')
-plt.title('Pod Binding Changes over time')
+plt.ylabel('Floating Average Evaluation')
 plt.gcf().set_size_inches(14, 5)
 
 box = ax.get_position()
@@ -66,8 +74,8 @@ ax.set_position([box.x0, box.y0 + box.height * 0.2,
                  box.width, box.height * 0.9])
 
 ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
-          fancybox=True, shadow=False, ncol=5)
+          fancybox=True, shadow=False, ncol=2)
 
-plt.savefig(f"cumulative_pod_binding_change_over_time_{run_id}.pdf", bbox_inches='tight')
+plt.savefig(f"../plots/cumulative_evaluation_over_time_{run_id}_no_title_floating_average_250.pdf", bbox_inches='tight')
 # plt.show()
 

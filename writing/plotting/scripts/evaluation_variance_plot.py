@@ -22,9 +22,9 @@ mpl.rcParams.update({
     "font.size": 20,  
     "axes.labelsize": 25,
     "axes.titlesize": 35,
-    "xtick.labelsize": 20,
+    "xtick.labelsize": 22,
     "ytick.labelsize": 20,
-    "legend.fontsize": 21,
+    "legend.fontsize": 25,
 })
 
 
@@ -48,22 +48,22 @@ for i, run in enumerate(runs):
     results.append(mycursor.fetchall())
 
 averages = []
-variances = []
+stddevs = []
 for i, run in enumerate(results):
     evaluations = [x[0] for x in run]
 
     averages.append(np.mean(evaluations))
-    variances.append(np.var(evaluations))
+    stddevs.append(np.std(evaluations))
 
 print("Averages:", dict(zip(runs_postfix, averages)))
 
-print("Variances:", dict(zip(runs_postfix, variances)))
+print("Standard Deviations:", dict(zip(runs_postfix, stddevs)))
 print("\\begin{tabular}{l|r|r}")
 # print("\\hline")
-print("Algorithm & Average & Variance\\\\")
+print("Algorithm & Average & Standard Deviation\\\\")
 print("\\hline")
 for i, postfix in enumerate(runs_postfix):
-    print(f"{postfix.replace('_', '\\_')} & {averages[i]:.2f} & {variances[i]:.2f}\\\\")
+    print(f"{postfix.replace('_', '\\_')} & {averages[i]:.2f} & {stddevs[i]:.2f}\\\\")
 # print("\\hline")
 print("\\end{tabular}")
 # Get default color cycle from matplotlib
@@ -72,7 +72,7 @@ color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 fig, ax = plt.subplots()
 
 data = [np.array([x[0] for x in run]) for run in results]
-box = ax.boxplot(data, labels=runs_postfix, patch_artist=True)
+box = ax.boxplot(data, labels=runs_postfix, patch_artist=True, whis=[1, 99])
 
 # Apply matching default matplotlib colors
 for patch, color in zip(box['boxes'], color_cycle[:len(runs_postfix)]):
@@ -83,11 +83,9 @@ for line in box['medians']:
 
 plt.xlabel('Algorithm')
 plt.ylabel('Evaluation')
-plt.title('Evaluation Boxplot for Different Algorithms')
 plt.gcf().set_size_inches(14, 5)
 
 plt.grid(True)
 
-plt.savefig(f"boxplot_evaluation_{run_id}.pdf", bbox_inches='tight', dpi=300)
-# plt.show()
+plt.savefig(f"../plots/boxplot_evaluation_{run_id}_no_title.pdf", bbox_inches='tight', dpi=300)
 

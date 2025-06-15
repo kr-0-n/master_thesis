@@ -111,13 +111,13 @@ medium_deployment = {
 
 enable_metrics = True
 
-graph = medium_graph
+graph = small_graph
 deployment = medium_deployment
 
-algorithm = evolutionary_solve
+algorithm = ant_colony_solve
 
 
-metrics_name_postfix = "evolutionary_solve"
+metrics_name_postfix = "ant_colony_solve_250"
 random_seed = 19
 
 # Penalties

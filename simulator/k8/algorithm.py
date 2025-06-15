@@ -270,10 +270,10 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
     ant_solution_graph = nx.DiGraph()
     root_node = (evaluate_step(graph, first_solution, debug=False), first_solution) # syntax for an entry in the ant solution graph: (evaluation, graph)
     ant_solution_graph.add_node(root_node, type="solution") 
-    amount_of_ants = 5
-    moves_per_ant = 10
+    amount_of_ants = 2
+    moves_per_ant = 3
     pheromone_evaporation = 0.5
-    rounds = 10
+    rounds = 2
     graph_hash_map = {}
     pheromone_constant = 50000
     initial_pheromone = 0.1
@@ -446,6 +446,7 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
 
             for ant in range(amount_of_ants):
                 move_ant(ant)
+                # draw_ant_graph()
                 
                 
         update_pheromones()
@@ -464,9 +465,9 @@ def ant_colony_solve(graph, pods=None, debug=False, visualize=False):
 
 def simulated_annealing_solve(graph, pods=None, debug=False, visualize=True):
     global rnd
-    max_iterations = 77000
+    max_iterations = 250
     initial_temperature = 1000
-    cooling_rate = 0.9997
+    cooling_rate = 0.92
 
     
     first_solution = graph.copy()

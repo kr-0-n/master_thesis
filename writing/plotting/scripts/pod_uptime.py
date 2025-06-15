@@ -12,7 +12,7 @@ if len(sys.argv) < 2:
     exit(1)
 
 run_id = sys.argv[1]
-runs_postfix = ["ant_colony", "evolutionary", "simulated_annealing", "kubernetes_default"]
+runs_postfix = ["ant_colony_250", "evolutionary", "simulated_annealing_250", "kubernetes_default"]
 runs = [f"k8_simulation_{run_id}_{postfix}" for postfix in runs_postfix]
 results = []
 for i, run in enumerate(runs):
