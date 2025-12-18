@@ -1,4 +1,4 @@
-FROM alpine
+FROM alpine:3.20
 RUN apk add --no-cache iperf3
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 RUN apk update

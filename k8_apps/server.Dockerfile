@@ -1,4 +1,4 @@
-FROM alpine
+FROM alpine:3.20
 RUN apk add --no-cache iperf3
 RUN mkdir /logs
 COPY ./iperf_server.sh /iperf_server.sh
