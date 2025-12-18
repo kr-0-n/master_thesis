@@ -10,11 +10,11 @@ type Link struct {
 	Source     string
 	Target     string
 	Latency    int
-	Throughput int
+	Throughput float64
 }
 
 type NetworkComRequirement struct {
 	Target     string
 	Latency    int
-	Throughput int
+	Throughput float64
 }

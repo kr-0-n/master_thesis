@@ -28,7 +28,7 @@ import (
 
 
 func main() {
-	common.LoadConfig("/home/cerdemo/Lorenz/master_thesis/k8_scheduler/common/config.yaml")
+	common.LoadConfig("/home/lorenz/master_thesis/k8_scheduler/common/config.yaml")
 	links := []common.Link{}
 
 	ticker := time.NewTicker(10 * time.Second)
@@ -45,19 +45,19 @@ func main() {
 		ResyncPeriod:  10 * time.Second,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				// fmt.Println("Adding node")
+				fmt.Println("Adding node")
 				node := obj.(*corev1.Node)
-				// println("Adding node: ", node.Name)
-				// println("Last Heartbeat Time: ", node.Status.Conditions[0].LastHeartbeatTime.Time.String())
-				// println("Status: ", node.Status.Conditions[0].Status)
+				println("Adding node: ", node.Name)
+				println("Last Heartbeat Time: ", node.Status.Conditions[0].LastHeartbeatTime.Time.String())
+				println("Status: ", node.Status.Conditions[0].Status)
 				if node.Status.Conditions[0].LastHeartbeatTime.After(time.Now().Add(-5*time.Minute)) && node.Status.Conditions[0].Status != "Unknown" {
 					graph.AddVertex(common.NodeToVertex(*node, "node"), common.VertexAttributes("node")...)
-					// fmt.Printf("Node added: %v\n", node.Status.Conditions[0].LastHeartbeatTime)
+					fmt.Printf("Node added: %v\n", node.Status.Conditions[0].LastHeartbeatTime)
 					verifyEdges(graph, links)
 					visualizer.DrawGraph(graph)
 				} else {
 					graph.AddVertex(common.NodeToVertex(*node, "offline_node"), common.VertexAttributes("offline_node")...)
-					// fmt.Printf("Node added: %v\n", node.Status.Conditions[0].LastHeartbeatTime)
+					fmt.Printf("Node added: %v\n", node.Status.Conditions[0].LastHeartbeatTime)
 					evaluator.UnavailabilityMap[node.Name] = append(evaluator.UnavailabilityMap[node.Name], time.Now())
 					verifyEdges(graph, links)
 					visualizer.DrawGraph(graph)
@@ -205,17 +205,17 @@ func queryLinkApi(links *[]common.Link) {
 	}
 
 	temp_links := []common.Link{}
+	
 
 	for _, link := range resp.Links {
-		temp_links = append(temp_links, common.Link{Source: link.From, Target: link.To, Latency: int(link.Latency), Throughput: int(link.Throughput)})
+		temp_links = append(temp_links, common.Link{Source: link.From, Target: link.To, Latency: int(link.Latency), Throughput: float64(link.Throughput)})
 	}
-	// print(resp.Links)
 
 	*links = temp_links
 }
 
 func connectToK8s() *kubernetes.Clientset {
-	config, err := clientcmd.BuildConfigFromFlags("", "/home/cerdemo/Lorenz/master_thesis/k8_deployment/playbooks/kubeconfig.yml")
+	config, err := clientcmd.BuildConfigFromFlags("", "/home/lorenz/master_thesis/k8_deployment/playbooks/kubeconfig.yml")
 	if err != nil {
 		// Try to use in-cluster configuration if the kubeconfig is not available
 		config, err = rest.InClusterConfig()

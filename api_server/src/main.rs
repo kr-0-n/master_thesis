@@ -71,7 +71,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             \"from\" TEXT NOT NULL,
             \"to\" TEXT NOT NULL,
             latency INTEGER,
-            throughput INTEGER,
+            throughput REAL,
             timestamp INTEGER,
             PRIMARY KEY (\"from\", \"to\")
         )",
