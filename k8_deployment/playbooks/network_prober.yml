@@ -1,0 +1,46 @@
+# - name: Add dependencies 
+#   hosts: all
+#   tasks:
+#     - name: Install grpcurl
+#       shell: curl -sSL "https://github.com/fullstorydev/grpcurl/releases/download/v1.9.1/grpcurl_1.9.1_linux_arm64.tar.gz" | sudo tar -xz -C /usr/local/bin
+#     - name: Install jq and bc
+#       shell: sudo apt-get install jq bc --yes
+- name: Copy files
+  hosts: all
+  tasks:
+    - name: Copy kubeconfig
+      copy:
+        src: /home/lorenz/master_thesis/k8_deployment/playbooks/kubeconfig.yml   # path on the control node
+        dest: /home/pi/kubeconfig    
+    - name: Copy network_prober
+      copy:
+        src: /home/lorenz/k8-batman-pi/network_prober.sh
+        dest: /home/pi/network_prober.sh    
+    - name: Copy message.proto
+      copy:
+        src: /home/lorenz/master_thesis/api_server/proto/message.proto
+        dest: /home/pi/message.proto
+    - name: Copy runner
+      copy:
+        src: /home/lorenz/k8-batman-pi/network_probe_runner.sh
+        dest: /home/pi/network_probe_runner.sh
+    - name: Copy service
+      become: true
+      copy:
+        src: /home/lorenz/k8-batman-pi/network_prober.service
+        dest: /etc/systemd/system/network_prober.service
+
+- name: Set permissions
+  hosts: all
+  tasks:
+    - name: Set permissions for network_prober
+      shell: "chmod +x /home/pi/network_prober.sh"
+    - name: Set permissions for network_probe_runner
+      shell: "chmod +x /home/pi/network_probe_runner.sh"
+- name: Start service
+  hosts: all
+  tasks:
+    - name: Start network probe service
+      become: true
+      shell: sudo systemctl start network_prober
+
