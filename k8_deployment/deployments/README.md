@@ -5,6 +5,7 @@ The image for the API server is in UiO Harbor. To pull from there, you need the 
  `kubectl create secret generic regcred --from-file=.dockerconfigjson=config.json --type=kubernetes.io/dockerconfigjson`\
 Make sure you have the correct secret. You can obtain it with something like `docker login harbor.uio.no`
 ## Client Deployment
+`helm upgrade test-app ./test-app -f test-app/values.yaml`
 Nothing interesting here
 ## Server Deployment
 Nothing interesting here
