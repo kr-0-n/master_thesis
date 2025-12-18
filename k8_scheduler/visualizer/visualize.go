@@ -12,6 +12,11 @@ import (
 func DrawGraph(graph gograph.Graph[string, *common.Node]) {
 	// fmt.Println("Drawing graph")
 	file, _ :=os.Create("./output/simple.gv")
-	_ = draw.DOT(graph, file)
+	_ = draw.DOT(graph, file,
+			draw.GraphAttribute("layout", "fdp"),
+			draw.GraphAttribute("splines", "line"),
+			draw.GraphAttribute("K", "0.6"),
+			draw.GraphAttribute("overlap", "false"),
+	)
 }
 
