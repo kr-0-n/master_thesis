@@ -1,6 +1,12 @@
 # API Server
 Refer to the `proto/message.proto` file to learn about the structure of the messages/services.
 
+## Setup
+Install `rust` with `cargo` and `protobuf`
+
+## Get started
+Build the project with `cargo build`
+
 ## Test
 You can use `grpcurl` to test the service.\
 **Insert**\
