@@ -18,7 +18,7 @@ spec:
       schedulerName: custom-scheduler
       containers:
       - name: {{ .Release.Name }}-client
-        image: harbor.uio.no/uio-ifi-ex-k8s-c/client:latest 
+        image: ghcr.io/kr-0-n/master_thesis/client:latest 
         env:
         - name: TARGET
           value: {{ .Release.Name }}-server
@@ -59,7 +59,7 @@ spec:
       schedulerName: custom-scheduler
       containers:
       - name: {{ .Release.Name }}-server
-        image: harbor.uio.no/uio-ifi-ex-k8s-c/server:latest  
+        image: ghcr.io/kr-0-n/master_thesis/server:latest  
         volumeMounts:
         - mountPath: /logs
           name: logs-volume
@@ -83,39 +83,51 @@ spec:
   selector:
     app: {{ .Release.Name }}-server
   ports:
-    - protocol: TCP
+    - name: port-5001
+      protocol: TCP
       port: 5001
       targetPort: 5001
-    - protocol: TCP
+    - name: port-5002
+      protocol: TCP
       port: 5002
       targetPort: 5002
-    - protocol: TCP
+    - name: port-5003
+      protocol: TCP
       port: 5003
       targetPort: 5003
-    - protocol: TCP
+    - name: port-5004
+      protocol: TCP
       port: 5004
       targetPort: 5004
-    - protocol: TCP
+    - name: port-5005
+      protocol: TCP
       port: 5005
       targetPort: 5005
-    - protocol: TCP
+    - name: port-5006
+      protocol: TCP
       port: 5006
       targetPort: 5006
-    - protocol: TCP
+    - name: port-5007
+      protocol: TCP
       port: 5007
       targetPort: 5007
-    - protocol: TCP
+    - name: port-5008
+      protocol: TCP
       port: 5008
       targetPort: 5008
-    - protocol: TCP
+    - name: port-5009
+      protocol: TCP
       port: 5009
       targetPort: 5009
-    - protocol: TCP
+    - name: port-5010
+      protocol: TCP
       port: 5010
       targetPort: 5010
-    - protocol: TCP
+    - name: port-5011
+      protocol: TCP
       port: 5011
       targetPort: 5011
-    - protocol: TCP
+    - name: port-5012
+      protocol: TCP
       port: 5012
       targetPort: 5012

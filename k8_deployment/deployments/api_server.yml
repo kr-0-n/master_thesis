@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: client 
-        image: harbor.uio.no/uio-ifi-ex-k8s-c/api_server:latest
+        image: ghcr.io/kr-0-n/master_thesis/api_server:latest
         ports:
         - containerPort: 50051
       nodeSelector: 
