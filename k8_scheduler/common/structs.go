@@ -11,6 +11,7 @@ type Link struct {
 	Target     string
 	Latency    int
 	Throughput float64
+	Timestamp  int
 }
 
 type NetworkComRequirement struct {

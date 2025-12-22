@@ -3,3 +3,5 @@ To connect to the cluster, the code expects the correct kubectl config file here
 
 To connect to the API Server, a pod forwarding is recommended\
 `kubectl port-forward pod/apiserver-669b498c78-xnqzm 50051:50051 -n default`
+
+Generate the proto code from the message.proto file with ``

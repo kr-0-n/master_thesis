@@ -7,6 +7,7 @@ message LinkInfoMessage {
     string to = 2;
     int32 latency = 3;
     double throughput = 4;
+    optional int32 timestamp = 5;
 }
 message LinkInfoMessageList {
     repeated LinkInfoMessage links = 1;

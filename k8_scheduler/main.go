@@ -10,6 +10,7 @@ import (
 	"k8_scheduler/scheduler/evaluator"
 	"log"
 	"time"
+	"os"
 
 	gograph "github.com/dominikbraun/graph"
 	"google.golang.org/grpc"
@@ -28,7 +29,16 @@ import (
 
 
 func main() {
-	common.LoadConfig("/home/lorenz/master_thesis/k8_scheduler/common/config.yaml")
+	if len(os.Args) < 2 {
+				println("The scheduler expects two arguments.")
+				println("arg1: /path/to/kubeconfig")
+				println("		This will be used to connect to the K8 cluster")
+				println("arg2: /path/to/schedulerconfig")
+				println("		This will be used to configure the scheduler. Find and example config.yaml file here: https://github.com/kr-0-n/master_thesis/blob/main/k8_scheduler/common/config.yaml")
+				panic("Incorrect Arguments")
+	}
+
+	common.LoadConfig(os.Args[2])
 	links := []common.Link{}
 
 	ticker := time.NewTicker(10 * time.Second)
@@ -47,10 +57,10 @@ func main() {
 			AddFunc: func(obj interface{}) {
 				fmt.Println("Adding node")
 				node := obj.(*corev1.Node)
-				println("Adding node: ", node.Name)
-				println("Last Heartbeat Time: ", node.Status.Conditions[0].LastHeartbeatTime.Time.String())
-				println("Status: ", node.Status.Conditions[0].Status)
-				if node.Status.Conditions[0].LastHeartbeatTime.After(time.Now().Add(-5*time.Minute)) && node.Status.Conditions[0].Status != "Unknown" {
+				// println("Adding node: ", node.Name)
+				// println("Last Heartbeat Time: ", node.Status.Conditions[0].LastHeartbeatTime.Time.String())
+				// println("Status: ", node.Status.Conditions[0].Status)
+				if isNodeOnline(node, clientset) {
 					graph.AddVertex(common.NodeToVertex(*node, "node"), common.VertexAttributes("node")...)
 					fmt.Printf("Node added: %v\n", node.Status.Conditions[0].LastHeartbeatTime)
 					verifyEdges(graph, links)
@@ -70,7 +80,8 @@ func main() {
 				// println("Updating node: ", newNode.Name)
 				// println("Last Heartbeat Time: ", newNode.Status.Conditions[0].LastHeartbeatTime.Time.String())
 				// println("Status: ", newNode.Status.Conditions[0].Status)
-				if newNode.Status.Conditions[0].LastHeartbeatTime.Time.After(time.Now().Add(-5*time.Minute)) && newNode.Status.Conditions[0].Status != "Unknown" {
+
+				if isNodeOnline(newNode, clientset) {
 					common.RemoveVertex(graph, oldNode.Name)
 					graph.AddVertex(common.NodeToVertex(*newNode, "node"), common.VertexAttributes("node")...)
 					verifyEdges(graph, links)
@@ -181,6 +192,25 @@ func main() {
 	select {}
 }
 
+func isNodeOnline(node *corev1.Node, clientset *kubernetes.Clientset) bool {
+	lease, err := clientset.
+		CoordinationV1().
+		Leases("kube-node-lease").
+		Get(context.Background(), node.Name, metav1.GetOptions{})
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	if lease.Spec.RenewTime.Time.After(time.Now().Add(-15*time.Second)) {
+		return true
+	} else {
+		println("Last Lease for %s: %s", node.Name, lease.Spec.RenewTime.Time.String())
+		return false
+	}
+
+}
+
 func queryLinkApi(links *[]common.Link) {
 	conn, err := grpc.NewClient("127.0.0.1:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -215,7 +245,7 @@ func queryLinkApi(links *[]common.Link) {
 }
 
 func connectToK8s() *kubernetes.Clientset {
-	config, err := clientcmd.BuildConfigFromFlags("", "/home/lorenz/master_thesis/k8_deployment/playbooks/kubeconfig.yml")
+	config, err := clientcmd.BuildConfigFromFlags("", os.Args[1])
 	if err != nil {
 		// Try to use in-cluster configuration if the kubeconfig is not available
 		config, err = rest.InClusterConfig()
@@ -257,6 +287,7 @@ func verifyEdges(graph gograph.Graph[string, *common.Node], links []common.Link)
 			graph.AddEdge(link.Source, link.Target, common.EdgeAttributes("offline_connection", link)...)
 
 		} else {
+			println(link.Timestamp)
 			graph.AddEdge(link.Source, link.Target, common.EdgeAttributes("connection", link)...)
 
 		}

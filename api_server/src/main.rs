@@ -39,7 +39,7 @@ impl LinkService for MyLinkService {
         let conn = self.db.lock().unwrap();
 
         let mut stmt = conn
-            .prepare("SELECT \"from\", \"to\", latency, throughput FROM connections")
+            .prepare("SELECT \"from\", \"to\", latency, throughput, timestamp FROM connections")
             .map_err(|e| Status::internal(format!("DB Error: {}", e)))?;
 
         let links_iter = stmt
@@ -49,6 +49,7 @@ impl LinkService for MyLinkService {
                     to: row.get(1)?,
                     latency: row.get(2)?,
                     throughput: row.get(3)?,
+                    timestamp: row.get(4)?,
                 })
             })
             .map_err(|e| Status::internal(format!("Query Error: {}", e)))?;

@@ -303,5 +303,6 @@ func node_stability_penalty(graph gograph.Graph[string, *common.Node], debug boo
 }
 
 func spread_penalty(graph gograph.Graph[string, *common.Node], debug bool) float64 {
+	// TODO: implement spread_penalty
 	return 0
 }

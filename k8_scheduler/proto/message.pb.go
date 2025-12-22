@@ -27,6 +27,7 @@ type LinkInfoMessage struct {
 	To            string                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	Latency       int32                  `protobuf:"varint,3,opt,name=latency,proto3" json:"latency,omitempty"`
 	Throughput    float64                `protobuf:"fixed64,4,opt,name=throughput,proto3" json:"throughput,omitempty"`
+	Timestamp     *int32                 `protobuf:"varint,5,opt,name=timestamp,proto3,oneof" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -85,6 +86,13 @@ func (x *LinkInfoMessage) GetLatency() int32 {
 func (x *LinkInfoMessage) GetThroughput() float64 {
 	if x != nil {
 		return x.Throughput
+	}
+	return 0
+}
+
+func (x *LinkInfoMessage) GetTimestamp() int32 {
+	if x != nil && x.Timestamp != nil {
+		return *x.Timestamp
 	}
 	return 0
 }
@@ -173,14 +181,17 @@ var File_proto_message_proto protoreflect.FileDescriptor
 
 const file_proto_message_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/message.proto\x12\x05links\"o\n" +
+	"\x13proto/message.proto\x12\x05links\"\xa0\x01\n" +
 	"\x0fLinkInfoMessage\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x18\n" +
 	"\alatency\x18\x03 \x01(\x05R\alatency\x12\x1e\n" +
 	"\n" +
 	"throughput\x18\x04 \x01(\x01R\n" +
-	"throughput\"C\n" +
+	"throughput\x12!\n" +
+	"\ttimestamp\x18\x05 \x01(\x05H\x00R\ttimestamp\x88\x01\x01B\f\n" +
+	"\n" +
+	"_timestamp\"C\n" +
 	"\x13LinkInfoMessageList\x12,\n" +
 	"\x05links\x18\x01 \x03(\v2\x16.links.LinkInfoMessageR\x05links\"\x0e\n" +
 	"\fEmptyMessage2\x8a\x01\n" +
@@ -225,6 +236,7 @@ func file_proto_message_proto_init() {
 	if File_proto_message_proto != nil {
 		return
 	}
+	file_proto_message_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
