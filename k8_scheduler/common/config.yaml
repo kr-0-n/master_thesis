@@ -5,6 +5,7 @@ penalties:
   latency: 100
   throughput: 10
   stability: 10
+  spread: 10
 
 stability:
   floating_average_window: 30 # in minutes

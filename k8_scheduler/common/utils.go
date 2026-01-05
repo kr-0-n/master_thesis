@@ -1,11 +1,10 @@
 package common
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
-	"fmt"
-
-	"encoding/json"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -20,7 +19,6 @@ func PodToVertex(pod corev1.Pod) *Node {
 				networkComString = env.Value
 			}
 		}
-
 	}
 	json_node_selector, _ := json.Marshal(pod.Spec.NodeSelector)
 	node_selector := string(json_node_selector)
@@ -68,11 +66,11 @@ func EdgeAttributes(kind string, link Link) []func(*gograph.EdgeProperties) {
 		}
 	} else if kind == "connection" {
 		return []func(*gograph.EdgeProperties){
-			gograph.EdgeAttribute("type", "connection"), gograph.EdgeAttribute("throughput", fmt.Sprintf("%.2f", link.Throughput)), gograph.EdgeAttribute("latency", strconv.Itoa(link.Latency)),  gograph.EdgeAttribute("label", strconv.Itoa(link.Latency)+"ms "+fmt.Sprintf("%.2f", link.Throughput)+"mbps"),
+			gograph.EdgeAttribute("type", "connection"), gograph.EdgeAttribute("throughput", fmt.Sprintf("%.2f", link.Throughput)), gograph.EdgeAttribute("latency", strconv.Itoa(link.Latency)), gograph.EdgeAttribute("label", strconv.Itoa(link.Latency)+"ms "+fmt.Sprintf("%.2f", link.Throughput)+"mbps"),
 		}
 	} else if kind == "offline_connection" {
 		return []func(*gograph.EdgeProperties){
-			gograph.EdgeAttribute("type", "offline_connection"), gograph.EdgeAttribute("throughput", fmt.Sprintf("%.2f", link.Throughput)), gograph.EdgeAttribute("latency", strconv.Itoa(link.Latency)), gograph.EdgeAttribute("label", strconv.Itoa(link.Latency)+"ms "+ fmt.Sprintf("%.2f", link.Throughput)+"mbps"), gograph.EdgeAttribute("style", "dotted"),
+			gograph.EdgeAttribute("type", "offline_connection"), gograph.EdgeAttribute("throughput", fmt.Sprintf("%.2f", link.Throughput)), gograph.EdgeAttribute("latency", strconv.Itoa(link.Latency)), gograph.EdgeAttribute("label", strconv.Itoa(link.Latency)+"ms "+fmt.Sprintf("%.2f", link.Throughput)+"mbps"), gograph.EdgeAttribute("style", "dotted"),
 		}
 	} else if kind == "assign" {
 		return []func(*gograph.EdgeProperties){
@@ -94,7 +92,7 @@ func NodesWithPrefix(graph gograph.Graph[string, *Node], prefix string) []string
 	return nodes
 }
 
-// Returns the NodeName a Pod is assigned to in the Graph. Returns "" if not assigned
+// AssignedNode Returns the NodeName a Pod is assigned to in the Graph. Returns "" if not assigned
 func AssignedNode(graph gograph.Graph[string, *Node], podName string) string {
 	edges, _ := graph.Edges()
 	for _, edge := range edges {
@@ -103,4 +101,16 @@ func AssignedNode(graph gograph.Graph[string, *Node], podName string) string {
 		}
 	}
 	return ""
+}
+
+// AssignedPods Returns a list of pods which are assigned to a given node
+func AssignedPods(graph gograph.Graph[string, *Node], nodeName string) []string {
+	assignedPods := []string{}
+	edges, _ := graph.Edges()
+	for _, edge := range edges {
+		if edge.Target == nodeName && edge.Properties.Attributes["type"] == "assign" {
+			assignedPods = append(assignedPods, edge.Source)
+		}
+	}
+	return assignedPods
 }

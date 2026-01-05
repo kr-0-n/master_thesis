@@ -1,13 +1,13 @@
 package evaluator
 
 import (
+	"encoding/json"
 	"k8_scheduler/common"
 	"k8_scheduler/math"
 	"log"
+	gomath "math"
 	"strconv"
 	"time"
-
-	"encoding/json"
 
 	gograph "github.com/dominikbraun/graph"
 )
@@ -111,7 +111,6 @@ func resources_penalty(graph gograph.Graph[string, *common.Node], debug bool) fl
 }
 
 func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) float64 {
-
 	val := 0.0
 
 	edges, _ := graph.Edges()
@@ -145,7 +144,7 @@ func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) floa
 					}
 					continue
 				}
-				//TODO This only considers a single Target, extend to multiple ones
+				// TODO This only considers a single Target, extend to multiple ones
 				shortestPath, err := gograph.ShortestPath(graph, common.AssignedNode(graph, pod.Name), common.AssignedNode(graph, destinations[0]))
 				if err != nil {
 					if debug {
@@ -254,7 +253,6 @@ func labels_penalty(graph gograph.Graph[string, *common.Node], debug bool) float
 							}
 
 							for key, value := range nodeSelectorMap {
-
 								if nodeLabelsMap[key] != value {
 									if debug {
 										println("Pod", pod.Name, "has label", key, "with value", value, "but node", node.Name, "has label", key, "with value", nodeLabelsMap[key])
@@ -303,6 +301,37 @@ func node_stability_penalty(graph gograph.Graph[string, *common.Node], debug boo
 }
 
 func spread_penalty(graph gograph.Graph[string, *common.Node], debug bool) float64 {
-	// TODO: implement spread_penalty
+	val := 0.0
+	numPods := 0
+	numNodes := 0
+	vertices, _ := graph.AdjacencyMap()
+	for vertex := range vertices {
+		node, err := graph.Vertex(vertex)
+		if err != nil {
+			log.Println("Error retrieving node ", node.Name, " from Graph")
+			continue
+		}
+		if node.Type == "node" {
+			numNodes++
+		}
+		if node.Type == "pod" {
+			numPods++
+		}
+	}
+
+	avgPodsPerNode := numPods / numNodes
+
+	for vertex := range vertices {
+		node, err := graph.Vertex(vertex)
+		if err != nil {
+			log.Println("Error retrieving node ", node.Name, " from Graph")
+			continue
+		}
+		if node.Type == "node" {
+			assignedPods := common.AssignedPods(graph, node.Name)
+			val += gomath.Abs(float64(len(assignedPods)-avgPodsPerNode)) * float64(common.Cfg.Penalties.Spread)
+		}
+	}
+
 	return 0
 }

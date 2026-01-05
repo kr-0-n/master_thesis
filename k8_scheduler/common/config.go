@@ -2,18 +2,20 @@ package common
 
 import (
 	"log"
-	"gopkg.in/yaml.v3"
 	"os"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
 	Penalties struct {
-		MovePod         int `yaml:"move_pod"`
-		UnconnectedPod  int `yaml:"unconnected_pod"`
-		Label           int `yaml:"label"`
-		Latency         int `yaml:"latency"`
-		Throughput      int `yaml:"throughput"`
-		Stability       int `yaml:"stability"`
+		MovePod        int `yaml:"move_pod"`
+		UnconnectedPod int `yaml:"unconnected_pod"`
+		Label          int `yaml:"label"`
+		Latency        int `yaml:"latency"`
+		Throughput     int `yaml:"throughput"`
+		Stability      int `yaml:"stability"`
+		Spread         int `yaml:"spread"`
 	} `yaml:"penalties"`
 	Stability struct {
 		FloatingAverageWindow int `yaml:"floating_average_window"`
@@ -33,3 +35,4 @@ func LoadConfig(filename string) {
 		log.Fatalf("Error parsing config file: %v", err)
 	}
 }
+
