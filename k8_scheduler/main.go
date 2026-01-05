@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"k8_scheduler/common"
 	"k8_scheduler/scheduler"
-	"k8_scheduler/visualizer"
 	"k8_scheduler/scheduler/evaluator"
-	"log"
-	"time"
-	"os"
+	"k8_scheduler/visualizer"
 
 	gograph "github.com/dominikbraun/graph"
 	"google.golang.org/grpc"
@@ -27,15 +28,14 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-
 func main() {
 	if len(os.Args) < 2 {
-				println("The scheduler expects two arguments.")
-				println("arg1: /path/to/kubeconfig")
-				println("		This will be used to connect to the K8 cluster")
-				println("arg2: /path/to/schedulerconfig")
-				println("		This will be used to configure the scheduler. Find and example config.yaml file here: https://github.com/kr-0-n/master_thesis/blob/main/k8_scheduler/common/config.yaml")
-				panic("Incorrect Arguments")
+		println("The scheduler expects two arguments.")
+		println("arg1: /path/to/kubeconfig")
+		println("		This will be used to connect to the K8 cluster")
+		println("arg2: /path/to/schedulerconfig")
+		println("		This will be used to configure the scheduler. Find and example config.yaml file here: https://github.com/kr-0-n/master_thesis/blob/main/k8_scheduler/common/config.yaml")
+		panic("Incorrect Arguments")
 	}
 
 	common.LoadConfig(os.Args[2])
@@ -55,29 +55,28 @@ func main() {
 		ResyncPeriod:  10 * time.Second,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				fmt.Println("Adding node")
 				node := obj.(*corev1.Node)
+				log.Println("Adding node", node.Name)
 				// println("Adding node: ", node.Name)
 				// println("Last Heartbeat Time: ", node.Status.Conditions[0].LastHeartbeatTime.Time.String())
 				// println("Status: ", node.Status.Conditions[0].Status)
 				if isNodeOnline(node, clientset) {
 					graph.AddVertex(common.NodeToVertex(*node, "node"), common.VertexAttributes("node")...)
-					fmt.Printf("Node added: %v\n", node.Status.Conditions[0].LastHeartbeatTime)
+					log.Println("Node added: ", node.Status.Conditions[0].LastHeartbeatTime)
 					verifyEdges(graph, links)
 					visualizer.DrawGraph(graph)
 				} else {
 					graph.AddVertex(common.NodeToVertex(*node, "offline_node"), common.VertexAttributes("offline_node")...)
-					fmt.Printf("Node added: %v\n", node.Status.Conditions[0].LastHeartbeatTime)
+					log.Println("Node added: ", node.Status.Conditions[0].LastHeartbeatTime)
 					evaluator.UnavailabilityMap[node.Name] = append(evaluator.UnavailabilityMap[node.Name], time.Now())
 					verifyEdges(graph, links)
 					visualizer.DrawGraph(graph)
 				}
-
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				oldNode := oldObj.(*corev1.Node)
 				newNode := newObj.(*corev1.Node)
-				// println("Updating node: ", newNode.Name)
+				log.Println("Updating node: ", newNode.Name)
 				// println("Last Heartbeat Time: ", newNode.Status.Conditions[0].LastHeartbeatTime.Time.String())
 				// println("Status: ", newNode.Status.Conditions[0].Status)
 
@@ -136,7 +135,6 @@ func main() {
 						visualizer.DrawGraph(graph)
 					}
 				}
-
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				oldPod := oldObj.(*corev1.Pod)
@@ -198,17 +196,17 @@ func isNodeOnline(node *corev1.Node, clientset *kubernetes.Clientset) bool {
 		Leases("kube-node-lease").
 		Get(context.Background(), node.Name, metav1.GetOptions{})
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return false
 	}
 
-	if lease.Spec.RenewTime.Time.After(time.Now().Add(-15*time.Second)) {
+	if lease.Spec.RenewTime.After(time.Now().Add(-15 * time.Second)) {
 		return true
 	} else {
-		println("Last Lease for %s: %s", node.Name, lease.Spec.RenewTime.Time.String())
+		log.Println("Last Heartbeat for", node.Name, "at", node.Status.Conditions[0].LastHeartbeatTime)
+		log.Println("Last Lease for", node.Name, "at", lease.Spec.RenewTime.String())
 		return false
 	}
-
 }
 
 func queryLinkApi(links *[]common.Link) {
@@ -221,11 +219,10 @@ func queryLinkApi(links *[]common.Link) {
 	client := pb.NewLinkServiceClient(conn)
 
 	// Perform RPC call
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
 	resp, err := client.GetAllLinks(ctx, &pb.EmptyMessage{})
-
 	if err != nil {
 		log.Fatalf("Error calling SendData: %v", err)
 	}
@@ -235,10 +232,9 @@ func queryLinkApi(links *[]common.Link) {
 	}
 
 	temp_links := []common.Link{}
-	
 
 	for _, link := range resp.Links {
-		temp_links = append(temp_links, common.Link{Source: link.From, Target: link.To, Latency: int(link.Latency), Throughput: float64(link.Throughput)})
+		temp_links = append(temp_links, common.Link{Source: link.From, Target: link.To, Latency: int(link.Latency), Throughput: float64(link.Throughput), Timestamp: int(*link.Timestamp)})
 	}
 
 	*links = temp_links
@@ -273,7 +269,10 @@ func verifyEdges(graph gograph.Graph[string, *common.Node], links []common.Link)
 	edges, _ := graph.Edges()
 	// fmt.Println(edges)
 	for _, edge := range edges {
-		graph.RemoveEdge(edge.Source, edge.Target)
+		err := graph.RemoveEdge(edge.Source, edge.Target)
+		if err != nil {
+			log.Default().Println(err)
+		}
 	}
 
 	for _, link := range links {
@@ -283,13 +282,10 @@ func verifyEdges(graph gograph.Graph[string, *common.Node], links []common.Link)
 			continue
 		}
 
-		if src_vertex.Type == "offline_node" || trgt_vertex.Type == "offline_node" {
+		if src_vertex.Type == "offline_node" || trgt_vertex.Type == "offline_node" || time.Since(time.Unix(int64(link.Timestamp), 0)) > (time.Second*time.Duration(common.Cfg.Stability.LinkTimeout)) {
 			graph.AddEdge(link.Source, link.Target, common.EdgeAttributes("offline_connection", link)...)
-
 		} else {
-			println(link.Timestamp)
 			graph.AddEdge(link.Source, link.Target, common.EdgeAttributes("connection", link)...)
-
 		}
 
 	}
@@ -361,11 +357,10 @@ func realiseGraph(graph gograph.Graph[string, *common.Node], clientset *kubernet
 					// fmt.Println(err)
 				} else {
 					// fmt.Println("Pod assigned to node:", edge.Target)
-
 				}
 
 			} else {
-				fmt.Println("INCONSISTENCE: Pod assigned to node:", edge.Target, "but pod is assigned to node:", vertex.Properties["nodeName"])
+				log.Println("INCONSISTENCE: Pod assigned to node:", edge.Target, "but pod is assigned to node:", vertex.Properties["nodeName"])
 				continue
 			}
 
@@ -373,5 +368,4 @@ func realiseGraph(graph gograph.Graph[string, *common.Node], clientset *kubernet
 		verifyEdges(graph, links)
 		visualizer.DrawGraph(graph)
 	}
-
 }

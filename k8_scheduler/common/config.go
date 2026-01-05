@@ -19,6 +19,7 @@ type Config struct {
 	} `yaml:"penalties"`
 	Stability struct {
 		FloatingAverageWindow int `yaml:"floating_average_window"`
+		LinkTimeout           int `yaml:"link_timeout"`
 	} `yaml:"stability"`
 }
 
@@ -35,4 +36,3 @@ func LoadConfig(filename string) {
 		log.Fatalf("Error parsing config file: %v", err)
 	}
 }
-

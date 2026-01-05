@@ -9,3 +9,4 @@ penalties:
 
 stability:
   floating_average_window: 30 # in minutes
+  link_timeout: 30 # in seconds
