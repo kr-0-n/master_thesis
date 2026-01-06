@@ -76,9 +76,7 @@ func main() {
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				oldNode := oldObj.(*corev1.Node)
 				newNode := newObj.(*corev1.Node)
-				log.Println("Updating node: ", newNode.Name)
-				// println("Last Heartbeat Time: ", newNode.Status.Conditions[0].LastHeartbeatTime.Time.String())
-				// println("Status: ", newNode.Status.Conditions[0].Status)
+				// log.Println("Updating node: ", newNode.Name)
 
 				if isNodeOnline(newNode, clientset) {
 					common.RemoveVertex(graph, oldNode.Name)
@@ -126,7 +124,7 @@ func main() {
 						podSeemsDead = true
 					}
 					if (pod.Status.Phase == "Failed" || pod.Status.Phase == "Succeeded" || pod.Status.Phase == "Unknown" || podSeemsDead) && !(pod.Status.Phase == "Pending") {
-						print("Deleting pod: ", pod.Name)
+						log.Println("Deleting pod: ", pod.Name)
 						clientset.CoreV1().Pods("default").Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
 					} else if pod.Status.Phase == "Pending" || pod.Status.Phase == "Running" {
 						// fmt.Printf("Conditions: %v\n", pod.Status.Conditions)
@@ -200,6 +198,14 @@ func isNodeOnline(node *corev1.Node, clientset *kubernetes.Clientset) bool {
 		return false
 	}
 
+	for _, condition := range node.Status.Conditions {
+		if condition.Type == corev1.NodeReady {
+			log.Println("Found ", node.Name, "Online=", condition.Status)
+			return condition.Status == corev1.ConditionTrue
+		}
+	}
+
+	// Fallback - should never be reached
 	if lease.Spec.RenewTime.After(time.Now().Add(-15 * time.Second)) {
 		return true
 	} else {
@@ -210,7 +216,7 @@ func isNodeOnline(node *corev1.Node, clientset *kubernetes.Clientset) bool {
 }
 
 func queryLinkApi(links *[]common.Link) {
-	conn, err := grpc.NewClient("127.0.0.1:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("127.0.0.1:50051", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
@@ -224,7 +230,8 @@ func queryLinkApi(links *[]common.Link) {
 
 	resp, err := client.GetAllLinks(ctx, &pb.EmptyMessage{})
 	if err != nil {
-		log.Fatalf("Error calling SendData: %v", err)
+		log.Printf("Error calling SendData: %v", err)
+		return
 	}
 
 	if resp == nil {
