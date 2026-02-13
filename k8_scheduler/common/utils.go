@@ -48,6 +48,7 @@ func VertexAttributes(kind string) []func(*gograph.VertexProperties) {
 	return nil
 }
 
+// RemoveVertex removes the given vertex and all its relations
 func RemoveVertex(graph gograph.Graph[string, *Node], vertex string) gograph.Graph[string, *Node] {
 	edges, _ := graph.Edges()
 	for _, edge := range edges {
