@@ -1,13 +1,14 @@
 package algorithms
 
 import (
-	gograph "github.com/dominikbraun/graph"
 	"k8_scheduler/common"
 	"math/rand"
+
+	gograph "github.com/dominikbraun/graph"
 )
 
 func Random(graph gograph.Graph[string, *common.Node], pod *common.Node, debug bool, visualize bool) gograph.Graph[string, *common.Node] {
-	graph.AddVertex(pod, common.VertexAttributes("pod")...)
+	graph.AddVertex(pod, common.VertexAttributes("pending_pod")...)
 
 	adjacencyMap, _ := graph.AdjacencyMap()
 	nodes := []*common.Node{}

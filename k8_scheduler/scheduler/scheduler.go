@@ -9,8 +9,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func SchedulePod(graph gograph.Graph[string, *common.Node], pod corev1.Pod, debug bool, visualize bool) gograph.Graph[string, *common.Node] {
-	graph_copy := graph
-	return algorithms.EvolutionarySolve(graph_copy, common.PodToVertex(pod), false, visualize)
+func SchedulePods(graph gograph.Graph[string, *common.Node], pods []corev1.Pod, debug bool, visualize bool) gograph.Graph[string, *common.Node] {
+	graphCopy := graph
+	if len(pods) == 0 {
+		return graph
+	}
+	var vertices []*common.Node = []*common.Node{}
+	for _, pod := range pods {
+		vertices = append(vertices, common.PodToVertex(pod))
+	}
+	return algorithms.EvolutionarySolve(graphCopy, vertices, false, visualize)
 }
-

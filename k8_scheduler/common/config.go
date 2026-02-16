@@ -21,6 +21,13 @@ type Config struct {
 		FloatingAverageWindow int `yaml:"floating_average_window"`
 		LinkTimeout           int `yaml:"link_timeout"`
 	} `yaml:"stability"`
+	Scheduler struct {
+		Evolutionary struct {
+			Generations            int `yaml:"generations"`
+			ChildrenPerParent      int `yaml:"children_per_parent"`
+			SurvivorsPerGeneration int `yaml:"survivors_per_generation"`
+		} `yaml:"evolutionary"`
+	} `yaml:"scheduler"`
 }
 
 var Cfg Config

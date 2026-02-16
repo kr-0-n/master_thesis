@@ -1,11 +1,10 @@
 package algorithms
 
 import (
-	"math/rand"
-	"sort"
-
 	"k8_scheduler/common"
 	"k8_scheduler/scheduler/evaluator"
+	"math/rand"
+	"sort"
 
 	gograph "github.com/dominikbraun/graph"
 )
@@ -15,16 +14,18 @@ type Solution struct {
 	value float64
 }
 
-func EvolutionarySolve(graph gograph.Graph[string, *common.Node], pod *common.Node, debug bool, visualize bool) gograph.Graph[string, *common.Node] {
-	generations := 10
-	children_per_parent := 5
-	survivors_per_generation := 5
+func EvolutionarySolve(graph gograph.Graph[string, *common.Node], pods []*common.Node, debug bool, visualize bool) gograph.Graph[string, *common.Node] {
+	generations := common.Cfg.Scheduler.Evolutionary.Generations
+	children_per_parent := common.Cfg.Scheduler.Evolutionary.ChildrenPerParent
+	survivors_per_generation := common.Cfg.Scheduler.Evolutionary.SurvivorsPerGeneration
 
 	initial_unassigned := graph
 
 	first_solution := initial_unassigned
 
-	first_solution = Random(first_solution, pod, false, false)
+	for _, pod := range pods {
+		first_solution = Random(first_solution, pod, false, false)
+	}
 
 	initial_best := Solution{first_solution, evaluator.EvaluateStep(initial_unassigned, first_solution, false)}
 	if debug {
@@ -35,7 +36,7 @@ func EvolutionarySolve(graph gograph.Graph[string, *common.Node], pod *common.No
 	// These are the initial survivors
 	survivors := make([]Solution, survivors_per_generation)
 	for i := 0; i < survivors_per_generation; i++ {
-		solution := Random(initial_unassigned, pod, false, false)
+		solution := first_solution
 		survivors[i] = Solution{solution, evaluator.EvaluateStep(initial_unassigned, solution, false)}
 		if survivors[i].value < current_best.value {
 			current_best = survivors[i]

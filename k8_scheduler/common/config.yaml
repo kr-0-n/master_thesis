@@ -10,3 +10,9 @@ penalties:
 stability:
   floating_average_window: 30 # in minutes
   link_timeout: 90 # in seconds
+
+scheduler:
+  evolutionary:
+    generations: 20
+    children_per_parent: 10
+    survivors_per_generation: 10
