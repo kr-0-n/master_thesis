@@ -63,9 +63,12 @@ func main() {
 						unscheduledPods = append(unscheduledPods, pod)
 					}
 				}
-				newGraph := scheduler.SchedulePods(networkgraph.GetGraph(), unscheduledPods, false, false)
-				visualizer.DrawGraph(newGraph)
-				realiseGraph(newGraph, clientset)
+				currentGraph := networkgraph.GetGraph()
+				visualizer.DrawGraph(currentGraph)
+				if len(unscheduledPods) > 0 {
+					newGraph := scheduler.SchedulePods(currentGraph, unscheduledPods, false, false)
+					realiseGraph(newGraph, clientset)
+				}
 
 			case <-quit:
 				ticker.Stop()
@@ -182,6 +185,6 @@ func realiseGraph(graph gograph.Graph[string, *common.Node], clientset *kubernet
 			}
 
 		}
-		visualizer.DrawGraph(graph)
+		// visualizer.DrawGraph(graph)
 	}
 }
