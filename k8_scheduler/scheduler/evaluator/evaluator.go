@@ -60,11 +60,11 @@ func Evaluate(graph gograph.Graph[string, *common.Node], debug bool) float64 {
 	}
 	val := 0.0
 
-	val += resources_penalty(graph_copy, debug)
-	val += network_penalty(graph_copy, debug)
-	val += labels_penalty(graph_copy, debug)
-	val += node_stability_penalty(graph_copy, debug)
-	val += spread_penalty(graph_copy, debug)
+	val += resources_penalty(graph_copy, false)
+	val += network_penalty(graph_copy, false)
+	val += labels_penalty(graph_copy, false)
+	val += node_stability_penalty(graph_copy, false)
+	val += spread_penalty(graph_copy, false)
 
 	if debug {
 		println("Evaluation:", val)
@@ -79,28 +79,28 @@ func resources_penalty(graph gograph.Graph[string, *common.Node], debug bool) fl
 	for vertex := range vertices {
 		node, _ := graph.Vertex(vertex)
 		if node.Type == "node" {
-			cpu_load := 0.0
+			cpu_load := 0
 			mem_load := 0
 			edges, _ := graph.Edges()
 			for _, edge := range edges {
 				if edge.Target == node.Name && edge.Properties.Attributes["type"] == "assign" {
 					pod, _ := graph.Vertex(edge.Source)
-					cpu_request, _ := strconv.ParseFloat(pod.Properties["cpu"], 64)
-					cpu_load += cpu_request
+					cpu_request, _ := strconv.ParseInt(pod.Properties["cpu"], 10, 64)
+					cpu_load += int(cpu_request)
 					mem_request, _ := strconv.ParseInt(pod.Properties["memory"], 10, 64)
 					mem_load += int(mem_request)
 				}
 			}
-			cpu_limit, _ := strconv.ParseFloat(node.Properties["cpu"], 64)
+			cpu_limit, _ := strconv.ParseInt(node.Properties["cpu"], 10, 64)
 			mem_limit, _ := strconv.ParseInt(node.Properties["memory"], 10, 64)
-			if cpu_load > cpu_limit {
-				val += cpu_load - cpu_limit
+			if cpu_load > int(cpu_limit) {
+				val += float64(cpu_load - int(cpu_limit))
 			}
 			if mem_load > int(mem_limit) {
 				val += float64(mem_load - int(mem_limit))
 			}
 			if debug {
-				println("node", node.Name, "CPU load:", cpu_load, "CPU available:", node.Properties["cpu"], "Memory load:", mem_load, "Memory available:", node.Properties["memory"])
+				println("node", node.Name, "CPU load:", cpu_load, "CPU available:", cpu_limit, "Memory load:", mem_load, "Memory available:", node.Properties["memory"])
 			}
 		}
 	}
@@ -112,7 +112,6 @@ func resources_penalty(graph gograph.Graph[string, *common.Node], debug bool) fl
 
 func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) float64 {
 	val := 0.0
-
 	edges, _ := graph.Edges()
 	for _, edge := range edges {
 		if edge.Properties.Attributes["type"] == "connection" {
@@ -134,7 +133,7 @@ func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) floa
 				}
 				continue
 			}
-			// println("Pod", pod.Name, "has networkComRequirements:", networkComRequirements[0].Target)
+			// println("Pod", pod.Name, "has networkComRequirements:", networkComRequirements[0].Target, networkComRequirements[0].Throughput, networkComRequirements[0].Latency)
 
 			for _, networkComRequirement := range networkComRequirements {
 				destinations := common.NodesWithPrefix(graph, networkComRequirement.Target)
@@ -150,6 +149,14 @@ func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) floa
 					if debug {
 						println("Error finding shortest path between pod", common.AssignedNode(graph, pod.Name), "and", common.AssignedNode(graph, destinations[0]), ":", err)
 					}
+					val += gomath.Inf(1)
+					continue
+				}
+				if len(shortestPath) == 0 {
+					if debug {
+						println("No path found between pod", common.AssignedNode(graph, pod.Name), "and", common.AssignedNode(graph, destinations[0]))
+					}
+					val += gomath.Inf(1)
 					continue
 				}
 
@@ -167,7 +174,11 @@ func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) floa
 					println("Accumulated Latency on ", shortestPath, accumulated_latency)
 				}
 				if accumulated_latency >= networkComRequirement.Latency {
-					val += float64(common.Cfg.Penalties.Latency * (accumulated_latency - networkComRequirement.Latency))
+					latency_penalty := float64(common.Cfg.Penalties.Latency * (accumulated_latency - networkComRequirement.Latency))
+					if debug {
+						println("Latency penalty: ", latency_penalty)
+					}
+					val += latency_penalty
 				}
 
 				// Calculate the throughput penalty

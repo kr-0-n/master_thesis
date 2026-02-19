@@ -22,13 +22,14 @@ func PodToVertex(pod k8.Pod) *Node {
 	}
 	jsonNodeSelector, _ := json.Marshal(pod.Spec.NodeSelector)
 	nodeSelector := string(jsonNodeSelector)
-	return &Node{Name: pod.Name, Type: "pod", Properties: map[string]string{"nodeName": pod.Spec.NodeName, "networkComRequirements": networkComString, "status": string(pod.Status.Phase), "cpu": strconv.FormatFloat(pod.Spec.Containers[0].Resources.Requests.Cpu().AsApproximateFloat64(), 'f', -1, 64), "mem": strconv.Itoa(int(pod.Spec.Containers[0].Resources.Requests.Memory().Value())), "nodeSelector": nodeSelector}}
+	// println("PodToVertex with CPU request", pod.Spec.Containers[0].Resources.Requests.Cpu().MilliValue(), "and memory request", pod.Spec.Containers[0].Resources.Requests.Memory().Value())
+	return &Node{Name: pod.Name, Type: "pod", Properties: map[string]string{"nodeName": pod.Spec.NodeName, "networkComRequirements": networkComString, "status": string(pod.Status.Phase), "cpu": strconv.Itoa(int(pod.Spec.Containers[0].Resources.Requests.Cpu().MilliValue())), "mem": strconv.Itoa(int(pod.Spec.Containers[0].Resources.Requests.Memory().Value())), "nodeSelector": nodeSelector}}
 }
 
 func NodeToVertex(node k8.Node, kind string) *Node {
 	jsonLabels, _ := json.Marshal(node.Labels)
 	labels := string(jsonLabels)
-	return &Node{Name: node.Name, Type: kind, Properties: map[string]string{"cpu": strconv.Itoa(int(node.Status.Allocatable.Cpu().Value())), "memory": strconv.Itoa(int(node.Status.Allocatable.Memory().Value())), "labels": labels}}
+	return &Node{Name: node.Name, Type: kind, Properties: map[string]string{"cpu": strconv.Itoa(int(node.Status.Allocatable.Cpu().MilliValue())), "memory": strconv.Itoa(int(node.Status.Allocatable.Memory().Value())), "labels": labels}}
 }
 
 func VertexAttributes(kind string) []func(*gograph.VertexProperties) {

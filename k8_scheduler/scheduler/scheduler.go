@@ -10,7 +10,7 @@ import (
 )
 
 func SchedulePods(graph gograph.Graph[string, *common.Node], pods []corev1.Pod, debug bool, visualize bool) gograph.Graph[string, *common.Node] {
-	graphCopy := graph
+	graphCopy, _ := graph.Clone()
 	if len(pods) == 0 {
 		return graph
 	}

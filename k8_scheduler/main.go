@@ -64,9 +64,9 @@ func main() {
 					}
 				}
 				currentGraph := networkgraph.GetGraph()
-				visualizer.DrawGraph(currentGraph)
 				if len(unscheduledPods) > 0 {
 					newGraph := scheduler.SchedulePods(currentGraph, unscheduledPods, false, false)
+					visualizer.DrawGraph(newGraph)
 					realiseGraph(newGraph, clientset)
 				}
 

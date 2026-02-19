@@ -19,6 +19,10 @@ spec:
       containers:
       - name: {{ .Release.Name }}-client
         image: ghcr.io/kr-0-n/master_thesis/client:latest 
+        resources:
+          requests:
+            cpu: "{{ .Values.client.CPU }}"
+            memory: "{{ .Values.client.MEM }}"
         env:
         - name: TARGET
           value: {{ .Release.Name }}-server
@@ -60,6 +64,10 @@ spec:
       containers:
       - name: {{ .Release.Name }}-server
         image: ghcr.io/kr-0-n/master_thesis/server:latest  
+        resources:
+          requests:
+            cpu: "{{ .Values.server.CPU }}"
+            memory: "{{ .Values.server.MEM }}"
         volumeMounts:
         - mountPath: /logs
           name: logs-volume

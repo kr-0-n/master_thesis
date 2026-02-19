@@ -3,6 +3,8 @@ package algorithms
 import (
 	"k8_scheduler/common"
 	"k8_scheduler/scheduler/evaluator"
+	"log"
+	"math"
 	"math/rand"
 	"sort"
 
@@ -14,110 +16,134 @@ type Solution struct {
 	value float64
 }
 
-func EvolutionarySolve(graph gograph.Graph[string, *common.Node], pods []*common.Node, debug bool, visualize bool) gograph.Graph[string, *common.Node] {
-	generations := common.Cfg.Scheduler.Evolutionary.Generations
-	children_per_parent := common.Cfg.Scheduler.Evolutionary.ChildrenPerParent
-	survivors_per_generation := common.Cfg.Scheduler.Evolutionary.SurvivorsPerGeneration
+func EvolutionarySolve(
+	baseGraph gograph.Graph[string, *common.Node],
+	pods []*common.Node,
+	debug bool,
+	visualize bool,
+) gograph.Graph[string, *common.Node] {
+	cfg := common.Cfg.Scheduler.Evolutionary
+	generations := cfg.Generations
+	childrenPerParent := cfg.ChildrenPerParent
+	survivorsPerGen := cfg.SurvivorsPerGeneration
 
-	initial_unassigned := graph
+	// ---------- Initial population (diverse) ----------
 
-	first_solution := initial_unassigned
+	survivors := make([]Solution, 0, survivorsPerGen)
+	currentBest := Solution{nil, math.MaxFloat64}
 
-	for _, pod := range pods {
-		first_solution = Random(first_solution, pod, false, false)
+	for i := 0; i < survivorsPerGen; i++ {
+
+		g, _ := baseGraph.Clone()
+
+		for _, pod := range pods {
+			g = Random(g, pod, false, false)
+		}
+
+		val := evaluator.EvaluateStep(baseGraph, g, false)
+		sol := Solution{g, val}
+
+		survivors = append(survivors, sol)
+
+		if val < currentBest.value {
+			currentBest = sol
+		}
 	}
 
-	initial_best := Solution{first_solution, evaluator.EvaluateStep(initial_unassigned, first_solution, false)}
 	if debug {
-		println("Initial Best: ", initial_best.value)
-	}
-	current_best := initial_best
-
-	// These are the initial survivors
-	survivors := make([]Solution, survivors_per_generation)
-	for i := 0; i < survivors_per_generation; i++ {
-		solution := first_solution
-		survivors[i] = Solution{solution, evaluator.EvaluateStep(initial_unassigned, solution, false)}
-		if survivors[i].value < current_best.value {
-			current_best = survivors[i]
-		}
+		println("Initial best:", currentBest.value)
 	}
 
-	for i := 0; i < generations; i++ {
+	// ---------- Evolution loop ----------
+
+	for gen := 0; gen < generations; gen++ {
+
 		if debug {
-			println("Generation: ", i)
+			println("Generation:", gen)
 		}
-		if current_best.value < 0.1 {
-			return current_best.graph
+
+		if currentBest.value < 0.1 {
+			println("Final best evaluation:", currentBest.value)
+			return currentBest.graph
 		}
-		children := []Solution{}
-		for j := 0; j < len(survivors); j++ {
-			if debug {
-				println("Parent: ", j)
-			}
 
-			for k := 0; k < children_per_parent; k++ {
-				if debug {
-					println("Solution: ", k)
-				}
+		children := make([]Solution, 0, survivorsPerGen*childrenPerParent)
 
-				child := survivors[j].graph
+		// ----- Produce children -----
 
-				// Choose a random pod for the mutation
-				pods := []*common.Node{}
-				adjacencyMap, _ := child.AdjacencyMap()
+		for _, parent := range survivors {
+			for c := 0; c < childrenPerParent; c++ {
 
-				for vertex := range adjacencyMap {
-					node, _ := child.Vertex(vertex)
+				child, _ := parent.graph.Clone()
+
+				// Collect pods currently placed
+				adjacency, _ := child.AdjacencyMap()
+
+				var placedPods []*common.Node
+				for v := range adjacency {
+					node, _ := child.Vertex(v)
 					if node.Type == "pod" {
-						pods = append(pods, node)
+						placedPods = append(placedPods, node)
 					}
 				}
-				chosenPod := pods[rand.Intn(len(pods))]
 
-				if debug {
-					println("Reassign Pod: ", chosenPod.Name)
+				if len(placedPods) == 0 {
+					continue
 				}
 
-				// Remove the pod from the graph
+				chosen := placedPods[rand.Intn(len(placedPods))]
+
+				// Remove pod
 				edges, _ := child.Edges()
-				for _, edge := range edges {
-					if edge.Source == chosenPod.Name || edge.Target == chosenPod.Name {
-						child.RemoveEdge(edge.Source, edge.Target)
+				for _, e := range edges {
+					if e.Source == chosen.Name || e.Target == chosen.Name {
+						child.RemoveEdge(e.Source, e.Target)
 					}
 				}
-				child.RemoveVertex(chosenPod.Name)
+				child.RemoveVertex(chosen.Name)
 
-				child = Random(child, chosenPod, false, false)
+				// Reassign randomly
+				child = Random(child, chosen, false, false)
 
-				value := evaluator.EvaluateStep(initial_unassigned, child, false)
-				if value < 0.1 {
+				val := evaluator.EvaluateStep(baseGraph, child, false)
+
+				if val < currentBest.value {
+					currentBest = Solution{child, val}
+				}
+
+				if val < 0.1 {
 					if debug {
-						println("Found a perfect solution")
+						println("Perfect solution found")
 					}
 					return child
 				}
-				children = append(children, Solution{child, value})
+
+				children = append(children, Solution{child, val})
 			}
 		}
+
+		if len(children) == 0 {
+			break
+		}
+
+		// ----- Select best children -----
+
 		sort.Slice(children, func(i, j int) bool {
 			return children[i].value < children[j].value
 		})
 
-		if debug {
-			println("we have", len(children), "children")
-		}
-		survivors = children[:survivors_per_generation]
-		if debug {
-			for i, child := range children {
-				println("Child #", i, " value: ", child.value)
-			}
+		if len(children) < survivorsPerGen {
+			survivors = children
+		} else {
+			survivors = children[:survivorsPerGen]
 		}
 
-		if survivors[0].value < current_best.value {
-			current_best = survivors[0]
+		if debug {
+			println("Best this gen:", survivors[0].value)
 		}
 	}
-	println("Best value: ", current_best.value)
-	return current_best.graph
+
+	log.Println("Final best evaluation:", currentBest.value)
+
+	return currentBest.graph
 }
