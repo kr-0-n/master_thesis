@@ -16,7 +16,7 @@ var UnavailabilityMap = make(map[string][]time.Time)
 
 func EvaluateStep(oldGraph gograph.Graph[string, *common.Node], newGraph gograph.Graph[string, *common.Node], debug bool) float64 {
 	val := Evaluate(newGraph, debug)
-	move_pod_penalty := 1000.0
+	move_pod_penalty := common.Cfg.Penalties.MovePod
 	old_assignments := []gograph.Edge[string]{}
 	new_assignments := []gograph.Edge[string]{}
 
@@ -41,7 +41,7 @@ func EvaluateStep(oldGraph gograph.Graph[string, *common.Node], newGraph gograph
 			}
 		}
 		if !found {
-			val += move_pod_penalty
+			val += float64(move_pod_penalty)
 		}
 	}
 	return val
@@ -76,37 +76,54 @@ func Evaluate(graph gograph.Graph[string, *common.Node], debug bool) float64 {
 func resources_penalty(graph gograph.Graph[string, *common.Node], debug bool) float64 {
 	vertices, _ := graph.AdjacencyMap()
 	val := 0.0
+
+	edges, _ := graph.Edges()
+
 	for vertex := range vertices {
 		node, _ := graph.Vertex(vertex)
-		if node.Type == "node" {
-			cpu_load := 0
-			mem_load := 0
-			edges, _ := graph.Edges()
-			for _, edge := range edges {
-				if edge.Target == node.Name && edge.Properties.Attributes["type"] == "assign" {
-					pod, _ := graph.Vertex(edge.Source)
-					cpu_request, _ := strconv.ParseInt(pod.Properties["cpu"], 10, 64)
-					cpu_load += int(cpu_request)
-					mem_request, _ := strconv.ParseInt(pod.Properties["memory"], 10, 64)
-					mem_load += int(mem_request)
-				}
-			}
-			cpu_limit, _ := strconv.ParseInt(node.Properties["cpu"], 10, 64)
-			mem_limit, _ := strconv.ParseInt(node.Properties["memory"], 10, 64)
-			if cpu_load > int(cpu_limit) {
-				val += float64(cpu_load - int(cpu_limit))
-			}
-			if mem_load > int(mem_limit) {
-				val += float64(mem_load - int(mem_limit))
-			}
-			if debug {
-				println("node", node.Name, "CPU load:", cpu_load, "CPU available:", cpu_limit, "Memory load:", mem_load, "Memory available:", node.Properties["memory"])
+		if node.Type != "node" {
+			continue
+		}
+
+		var cpuLoad int64
+		var memLoadBytes int64
+
+		for _, edge := range edges {
+			if edge.Target == node.Name && edge.Properties.Attributes["type"] == "assign" {
+				pod, _ := graph.Vertex(edge.Source)
+
+				cpuReq, _ := strconv.ParseInt(pod.Properties["cpu"], 10, 64)
+				memReq, _ := strconv.ParseInt(pod.Properties["memory"], 10, 64)
+
+				cpuLoad += cpuReq
+				memLoadBytes += memReq
 			}
 		}
+
+		cpuLimit, _ := strconv.ParseInt(node.Properties["cpu"], 10, 64)
+		memLimitMiB, _ := strconv.ParseInt(node.Properties["memory"], 10, 64)
+
+		memLoadMiB := memLoadBytes / (1024 * 1024)
+
+		if cpuLoad > cpuLimit && cpuLimit > 0 {
+			val += float64(cpuLoad-cpuLimit) / float64(cpuLimit)
+		}
+
+		if memLoadMiB > memLimitMiB && memLimitMiB > 0 {
+			val += float64(memLoadMiB-memLimitMiB) / float64(memLimitMiB)
+		}
+
+		if debug {
+			println("node", node.Name,
+				"CPU load:", cpuLoad, "CPU limit:", cpuLimit,
+				"Mem load MiB:", memLoadMiB, "Mem limit MiB:", memLimitMiB)
+		}
 	}
+
 	if debug {
 		println("Resources penalty:", val)
 	}
+
 	return val
 }
 
@@ -183,6 +200,7 @@ func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) floa
 
 				// Calculate the throughput penalty
 				lastAdditionalOutput := math.LinearFunction{M: float64(networkComRequirement.Throughput), A: 0, C: 0}
+
 				for i := range shortestPath[0 : len(shortestPath)-1] {
 					if debug {
 						println("Current Link", shortestPath[i], shortestPath[i+1])
@@ -191,13 +209,9 @@ func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) floa
 
 					old_link_wanted_service := math.LinearFunction{}
 					edge, _ := graph.Edge(shortestPath[i], shortestPath[i+1])
-					json.Unmarshal([]byte(edge.Properties.Attributes["wanted_connection"]), &old_link_wanted_service)
-
-					// println("Old link wanted service: ", old_link_wanted_service.String())
+					_ = json.Unmarshal([]byte(edge.Properties.Attributes["wanted_connection"]), &old_link_wanted_service)
 
 					new_link_wanted_service := math.Multiply(lastAdditionalOutput, old_link_wanted_service)
-					// println("New link wanted service: ", new_link_wanted_service.String())
-
 					edge.Properties.Attributes["wanted_connection"] = new_link_wanted_service.String()
 
 					throughput, err := strconv.ParseFloat(edge.Properties.Attributes["throughput"], 64)
@@ -207,22 +221,19 @@ func network_penalty(graph gograph.Graph[string, *common.Node], debug bool) floa
 						}
 						continue
 					}
-					if old_link_wanted_service.M > throughput {
-						lastAdditionalOutput = math.LinearFunction{M: throughput, A: 0, C: 0}
-					} else {
-						if new_link_wanted_service.M <= throughput {
-							lastAdditionalOutput = lastAdditionalOutput
-						} else {
-							lastAdditionalOutput = math.Devide(math.LinearFunction{M: throughput, A: 0, C: 0}, old_link_wanted_service)
-						}
-					}
 
 					if new_link_wanted_service.M > throughput {
-						val += float64(common.Cfg.Penalties.Throughput) * (new_link_wanted_service.M - throughput)
+						// scale down the carried output to the link capacity
+						lastAdditionalOutput = math.Devide(
+							math.LinearFunction{M: throughput, A: 0, C: 0},
+							old_link_wanted_service,
+						)
+
+						val += float64(common.Cfg.Penalties.Throughput) *
+							(new_link_wanted_service.M - throughput)
 					}
-
+					// else: capacity is sufficient → lastAdditionalOutput unchanged
 				}
-
 			}
 
 		}
@@ -344,5 +355,5 @@ func spread_penalty(graph gograph.Graph[string, *common.Node], debug bool) float
 		}
 	}
 
-	return 0
+	return val
 }
