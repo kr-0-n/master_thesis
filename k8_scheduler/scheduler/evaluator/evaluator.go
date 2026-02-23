@@ -2,12 +2,13 @@ package evaluator
 
 import (
 	"encoding/json"
-	"k8_scheduler/common"
-	"k8_scheduler/math"
 	"log"
 	gomath "math"
 	"strconv"
 	"time"
+
+	"k8_scheduler/common"
+	"k8_scheduler/math"
 
 	gograph "github.com/dominikbraun/graph"
 )
@@ -106,11 +107,11 @@ func resources_penalty(graph gograph.Graph[string, *common.Node], debug bool) fl
 		memLoadMiB := memLoadBytes / (1024 * 1024)
 
 		if cpuLoad > cpuLimit && cpuLimit > 0 {
-			val += float64(cpuLoad-cpuLimit) / float64(cpuLimit)
+			val += (float64(cpuLoad-cpuLimit) / float64(cpuLimit)) * float64(common.Cfg.Penalties.CPU)
 		}
 
 		if memLoadMiB > memLimitMiB && memLimitMiB > 0 {
-			val += float64(memLoadMiB-memLimitMiB) / float64(memLimitMiB)
+			val += (float64(memLoadMiB-memLimitMiB) / float64(memLimitMiB)) * float64(common.Cfg.Penalties.Memory)
 		}
 
 		if debug {

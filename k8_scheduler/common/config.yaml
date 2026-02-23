@@ -6,6 +6,8 @@ penalties:
   throughput: 10
   stability: 10
   spread: 10
+  cpu: 10000000
+  memory: 10000000
 
 stability:
   floating_average_window: 30 # in minutes

@@ -16,6 +16,8 @@ type Config struct {
 		Throughput     int `yaml:"throughput"`
 		Stability      int `yaml:"stability"`
 		Spread         int `yaml:"spread"`
+		CPU            int `yaml:"cpu"`
+		Memory         int `yaml:"memory"`
 	} `yaml:"penalties"`
 	Stability struct {
 		FloatingAverageWindow int `yaml:"floating_average_window"`
