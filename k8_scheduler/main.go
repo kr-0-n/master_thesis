@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"log"
+	"os"
+	"time"
+
 	"k8_scheduler/common"
 	networkgraph "k8_scheduler/networkGraph"
 	"k8_scheduler/scheduler"
 	"k8_scheduler/visualizer"
-	"log"
-	"os"
-	"time"
 
 	gograph "github.com/dominikbraun/graph"
 	"google.golang.org/grpc"
@@ -52,17 +53,24 @@ func main() {
 				networkgraph.SetK8Knowledge(k8knowledge)
 
 				for _, node := range k8knowledge.Nodes {
-					log.Printf("Found Node: %s, Online %t\n", node.Name, common.IsNodeOnline(&node))
-				}
 
-				networkgraph.SetNetworkKnowledge(queryLinkAPI())
+					var nodeCondition k8.NodeCondition
+					for _, cond := range node.Status.Conditions {
+						if cond.Type == k8.NodeReady {
+							nodeCondition = cond
+						}
+					}
+					log.Printf("Found Node: %s, Online %t, Status %s\n", node.Name, common.IsNodeOnline(&node), &nodeCondition)
+				}
 				unscheduledPods := []k8.Pod{}
 				for _, pod := range k8knowledge.Pods {
-					log.Printf("Found Pod: %s, Status: %s, NodeName: %s", pod.Name, pod.Status.Phase, pod.Spec.NodeName)
+					log.Printf("Found Pod: %s, Phase: %s, NodeName: %s, Status %s\n", pod.Name, pod.Status.Phase, pod.Spec.NodeName, &pod.Status.Conditions)
 					if pod.Status.Phase == "Pending" && pod.Spec.NodeName == "" {
 						unscheduledPods = append(unscheduledPods, pod)
 					}
 				}
+
+				networkgraph.SetNetworkKnowledge(queryLinkAPI())
 				currentGraph := networkgraph.GetGraph()
 				if len(unscheduledPods) > 0 {
 					newGraph := scheduler.SchedulePods(currentGraph, unscheduledPods, false, false)
