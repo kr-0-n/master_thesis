@@ -1,10 +1,11 @@
 package visualizer
 
 import (
-	"k8_scheduler/common"
 	"os"
 	"strconv"
 	"time"
+
+	"k8_scheduler/common"
 
 	gograph "github.com/dominikbraun/graph"
 	"github.com/dominikbraun/graph/draw"
@@ -12,6 +13,11 @@ import (
 
 func DrawGraph(graph gograph.Graph[string, *common.Node]) {
 	// fmt.Println("Drawing graph")
+	vertices, _ := graph.AdjacencyMap()
+	for vertex := range vertices {
+		node, _ := graph.Vertex(vertex)
+		delete(node.Properties, "wanted_connection")
+	}
 	file, _ := os.Create("./output/" + strconv.Itoa(int(time.Now().Unix())) + ".gv")
 	_ = draw.DOT(graph, file,
 		draw.GraphAttribute("layout", "fdp"),
