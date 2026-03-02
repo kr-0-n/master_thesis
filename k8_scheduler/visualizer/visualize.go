@@ -18,6 +18,12 @@ func DrawGraph(graph gograph.Graph[string, *common.Node]) {
 		node, _ := graph.Vertex(vertex)
 		delete(node.Properties, "wanted_connection")
 	}
+
+	edges, _ := graph.Edges()
+	for _, edge := range edges {
+		delete(edge.Properties.Attributes, "wanted_connection")
+	}
+
 	file, _ := os.Create("./output/" + strconv.Itoa(int(time.Now().Unix())) + ".gv")
 	_ = draw.DOT(graph, file,
 		draw.GraphAttribute("layout", "fdp"),
