@@ -72,10 +72,11 @@ func main() {
 
 				networkgraph.SetNetworkKnowledge(queryLinkAPI())
 				currentGraph := networkgraph.GetGraph()
+				visualizer.DrawGraph(currentGraph, "pre")
 				if len(unscheduledPods) > 0 {
 					newGraph := scheduler.SchedulePods(currentGraph, unscheduledPods, false, false)
-					visualizer.DrawGraph(newGraph)
 					realiseGraph(newGraph, clientset)
+					visualizer.DrawGraph(newGraph, "post")
 				}
 
 			case <-quit:
