@@ -4,9 +4,10 @@ package networkgraph
 import (
 	"encoding/json"
 	"errors"
-	"k8_scheduler/common"
 	"log"
 	"time"
+
+	"k8_scheduler/common"
 
 	k8 "k8s.io/api/core/v1"
 
@@ -112,13 +113,13 @@ func applyK8Knowledge() {
 	adjacencyMap, _ := graph.AdjacencyMap()
 	for vertexID := range adjacencyMap {
 		vertex, _ := graph.Vertex(vertexID)
-		if vertex.Type == "pod" || vertex.Type == "Node" {
+		if vertex.Type == "pod" || vertex.Type == "node" {
 			common.RemoveVertex(graph, vertexID)
 		}
 	}
 
 	for _, pod := range k8Knowledge.Pods {
-		if pod.Status.Phase == "running" || pod.Status.Phase == "Pending" {
+		if pod.Status.Phase == "Running" || pod.Status.Phase == "Pending" {
 			AddPod(&pod)
 		}
 	}
