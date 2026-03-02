@@ -11,7 +11,7 @@ import (
 	"github.com/dominikbraun/graph/draw"
 )
 
-func DrawGraph(graph gograph.Graph[string, *common.Node]) {
+func DrawGraph(graph gograph.Graph[string, *common.Node], prefix string) {
 	// fmt.Println("Drawing graph")
 	vertices, _ := graph.AdjacencyMap()
 	for vertex := range vertices {
@@ -24,7 +24,7 @@ func DrawGraph(graph gograph.Graph[string, *common.Node]) {
 		delete(edge.Properties.Attributes, "wanted_connection")
 	}
 
-	file, _ := os.Create("./output/" + strconv.Itoa(int(time.Now().Unix())) + ".gv")
+	file, _ := os.Create("./output/" + prefix + strconv.Itoa(int(time.Now().Unix())) + ".gv")
 	_ = draw.DOT(graph, file,
 		draw.GraphAttribute("layout", "fdp"),
 		draw.GraphAttribute("splines", "line"),
