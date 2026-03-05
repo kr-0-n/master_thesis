@@ -84,6 +84,10 @@ func SetNetworkKnowledge(links []common.Link) {
 	applyNetworkKnowledge()
 }
 
+func GetK8Knowledge() common.K8Knowledge {
+	return k8Knowledge
+}
+
 func applyNetworkKnowledge() {
 	for _, link := range networkKnowledge {
 		srcVertex, _ := graph.Vertex(link.Source)
@@ -119,7 +123,8 @@ func applyK8Knowledge() {
 	}
 
 	for _, pod := range k8Knowledge.Pods {
-		if pod.Status.Phase == "Running" || pod.Status.Phase == "Pending" {
+		if pod.Status.Phase == "Running" || (pod.Status.Phase == "Pending" && pod.Spec.SchedulerName == "custom-scheduler") || (pod.Status.Phase == "Pending" && pod.Spec.NodeName != "") {
+			log.Default().Printf("Adding Pod %s to graph\n", pod.Name)
 			AddPod(&pod)
 		}
 	}

@@ -52,7 +52,7 @@ func main() {
 				k8knowledge := queryK8API(*clientset)
 				networkgraph.SetK8Knowledge(k8knowledge)
 
-				for _, node := range k8knowledge.Nodes {
+				for _, node := range networkgraph.GetK8Knowledge().Nodes {
 
 					var nodeCondition k8.NodeCondition
 					for _, cond := range node.Status.Conditions {
@@ -63,7 +63,7 @@ func main() {
 					log.Printf("Found Node: %s, Online %t, Status %s\n", node.Name, common.IsNodeOnline(&node), &nodeCondition)
 				}
 				unscheduledPods := []k8.Pod{}
-				for _, pod := range k8knowledge.Pods {
+				for _, pod := range networkgraph.GetK8Knowledge().Pods {
 					log.Printf("Found Pod: %s, Phase: %s, NodeName: %s, Scheduler: %s, Status %s\n", pod.Name, pod.Status.Phase, pod.Spec.NodeName, pod.Spec.SchedulerName, &pod.Status.Conditions)
 					if pod.Status.Phase == "Pending" && pod.Spec.NodeName == "" && pod.Spec.SchedulerName == "custom-scheduler" {
 						unscheduledPods = append(unscheduledPods, pod)
@@ -96,19 +96,19 @@ func queryK8API(clientset kubernetes.Clientset) common.K8Knowledge {
 	}
 	pods := podList.Items
 
-	// Filter pods: keep only those scheduled by "custom-scheduler"
-	filteredPods := pods[:0] // reuse underlying array (efficient)
+	// // Filter pods: keep only those scheduled by "custom-scheduler"
+	// filteredPods := pods[:0] // reuse underlying array (efficient)
+	//
+	// for _, pod := range pods {
+	// 	if pod.Status.Phase == "Pending" &&
+	// 		pod.Spec.NodeName == "" &&
+	// 		pod.Spec.SchedulerName == "custom-scheduler" {
+	//
+	// 		filteredPods = append(filteredPods, pod)
+	// 	}
+	// }
 
-	for _, pod := range pods {
-		if pod.Status.Phase == "Pending" &&
-			pod.Spec.NodeName == "" &&
-			pod.Spec.SchedulerName == "custom-scheduler" {
-
-			filteredPods = append(filteredPods, pod)
-		}
-	}
-
-	pods = filteredPods
+	// pods = filteredPods
 
 	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
