@@ -61,6 +61,10 @@ spec:
         app: {{ .Release.Name }}-server
     spec:
       schedulerName: custom-scheduler
+      {{- if .Values.server.labels.feature }}
+      nodeSelector:
+        feature: {{ .Values.server.labels.feature }}
+      {{- end }}
       containers:
       - name: {{ .Release.Name }}-server
         image: ghcr.io/kr-0-n/master_thesis/server:latest  
