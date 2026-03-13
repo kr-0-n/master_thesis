@@ -4,10 +4,9 @@ package networkgraph
 import (
 	"encoding/json"
 	"errors"
+	"k8_scheduler/common"
 	"log"
 	"time"
-
-	"k8_scheduler/common"
 
 	k8 "k8s.io/api/core/v1"
 
@@ -41,7 +40,7 @@ func AddPod(pod *k8.Pod) (bool, error) {
 	} else if existingPod != nil {
 		return false, errors.New("pod exists")
 	}
-	if pod.Status.Phase == "Running" || pod.Status.Phase == "Pending" {
+	if pod.Status.Phase == k8.PodRunning || pod.Status.Phase == k8.PodPending {
 		err := graph.AddVertex(common.PodToVertex(*pod), common.VertexAttributes("pod")...)
 		if err != nil {
 			panic(err)
@@ -118,12 +117,12 @@ func applyK8Knowledge() {
 	for vertexID := range adjacencyMap {
 		vertex, _ := graph.Vertex(vertexID)
 		if vertex.Type == "pod" || vertex.Type == "node" {
-			common.RemoveVertex(graph, vertexID)
+			graph = common.RemoveVertex(graph, vertexID)
 		}
 	}
 
 	for _, pod := range k8Knowledge.Pods {
-		if pod.Status.Phase == "Running" || (pod.Status.Phase == "Pending" && pod.Spec.SchedulerName == "custom-scheduler") || (pod.Status.Phase == "Pending" && pod.Spec.NodeName != "") {
+		if pod.DeletionTimestamp == nil && (pod.Status.Phase == k8.PodRunning || (pod.Status.Phase == k8.PodPending && (pod.Spec.SchedulerName == "custom-scheduler" || pod.Spec.NodeName != ""))) {
 			log.Default().Printf("Adding Pod %s to graph\n", pod.Name)
 			AddPod(&pod)
 		}
