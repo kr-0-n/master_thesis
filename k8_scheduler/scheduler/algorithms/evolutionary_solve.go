@@ -1,6 +1,7 @@
 package algorithms
 
 import (
+	"encoding/json"
 	"k8_scheduler/common"
 	"k8_scheduler/scheduler/evaluator"
 	"log"
@@ -31,13 +32,56 @@ func EvolutionarySolve(
 
 	survivors := make([]Solution, 0, survivorsPerGen)
 	currentBest := Solution{nil, math.MaxFloat64}
-
+	sort.SliceStable(pods, func(i, j int) bool {
+		return pods[i].Properties["nodeSelector"] != ""
+	})
 	for i := 0; i < survivorsPerGen; i++ {
 
 		g, _ := baseGraph.Clone()
-
+		var nodes []*common.Node
+		adjacencyMap, _ := g.AdjacencyMap()
+		for vertexID := range adjacencyMap {
+			vertex, _ := g.Vertex(vertexID)
+			if vertex.Type == "node" {
+				nodes = append(nodes, vertex)
+			}
+		}
 		for _, pod := range pods {
-			g = Random(g, pod, false, false)
+			nodeSelector := make(map[string]string)
+			if pod.Properties["nodeSelector"] != "" {
+				_ = json.Unmarshal([]byte(pod.Properties["nodeSelector"]), &nodeSelector)
+			}
+
+			// Find candidate nodes that match all labels
+			var candidates []*common.Node
+
+			for _, node := range nodes { // assuming nodes is a slice of *common.Node
+				if node.Type != "node" || node.Properties["labels"] == "" {
+					continue
+				}
+
+				var nodeLabels map[string]string
+				_ = json.Unmarshal([]byte(node.Properties["labels"]), &nodeLabels)
+
+				match := true
+				for k, v := range nodeSelector {
+					if nodeLabels[k] != v {
+						match = false
+						break
+					}
+				}
+
+				if match {
+					candidates = append(candidates, node)
+				}
+			}
+
+			// Assign pod to a random candidate node (or pick first)
+			if len(candidates) > 0 {
+				g = Random(g, pod, false, false, candidates...) // modify Random to accept candidates
+			} else {
+				g = Random(g, pod, false, false) // fallback
+			}
 		}
 
 		val := evaluator.EvaluateStep(baseGraph, g, false)
