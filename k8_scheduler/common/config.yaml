@@ -1,8 +1,8 @@
 penalties:
-  move_pod: 100
-  unconnected_pod: 1000
-  label: 1000
-  latency: 100
+  move_pod: 1000000
+  unconnected_pod: 1000000
+  label: 10000000
+  latency: 10
   throughput: 10
   stability: 10
   spread: 10
@@ -11,7 +11,7 @@ penalties:
 
 stability:
   floating_average_window: 30 # in minutes
-  link_timeout: 90 # in seconds
+  link_timeout: 9000000 # in seconds
 
 scheduler:
   evolutionary:
