@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
+	"k8_scheduler/common"
+	"k8_scheduler/scheduler"
+	"k8_scheduler/visualizer"
 	"log"
 	"os"
 	"time"
 
-	"k8_scheduler/common"
 	networkgraph "k8_scheduler/networkGraph"
-	"k8_scheduler/scheduler"
-	"k8_scheduler/visualizer"
 
 	gograph "github.com/dominikbraun/graph"
 	"google.golang.org/grpc"
@@ -18,6 +18,8 @@ import (
 	pb "k8_scheduler/proto"
 
 	k8 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -60,11 +62,55 @@ func main() {
 							nodeCondition = cond
 						}
 					}
-					log.Printf("Found Node: %s, Online %t, Status %s\n", node.Name, common.IsNodeOnline(&node), &nodeCondition)
+					cpu := node.Status.Allocatable[v1.ResourceCPU]
+					mem := node.Status.Allocatable[v1.ResourceMemory]
+					log.Printf(
+						"Found Node: %s, Online %t, Status %s, Available CPU: %s, Available Mem: %s\n",
+						node.Name,
+						common.IsNodeOnline(&node),
+						&nodeCondition,
+						cpu.String(),
+						mem.String(),
+					)
 				}
 				unscheduledPods := []k8.Pod{}
+				terminatingPodsExist := false
 				for _, pod := range networkgraph.GetK8Knowledge().Pods {
-					log.Printf("Found Pod: %s, Phase: %s, NodeName: %s, Scheduler: %s, Status %s\n", pod.Name, pod.Status.Phase, pod.Spec.NodeName, pod.Spec.SchedulerName, &pod.Status.Conditions)
+					log.Printf("Found Pod: %s, Phase: %s, NodeName: %s, Scheduler: %s, DeletionTimestamp: %s, CPUReq: %s, MemReq: %s, Status: %s\n",
+						pod.Name,
+						pod.Status.Phase,
+						pod.Spec.NodeName,
+						pod.Spec.SchedulerName,
+						func() string {
+							if pod.DeletionTimestamp != nil {
+								return pod.DeletionTimestamp.String()
+							}
+							return "<none>"
+						}(),
+						func() string {
+							cpu, mem := resource.Quantity{}, resource.Quantity{}
+							for _, c := range pod.Spec.Containers {
+								cpu.Add(c.Resources.Requests[v1.ResourceCPU])
+								mem.Add(c.Resources.Requests[v1.ResourceMemory])
+							}
+							return cpu.String()
+						}(),
+						func() string {
+							cpu, mem := resource.Quantity{}, resource.Quantity{}
+							for _, c := range pod.Spec.Containers {
+								cpu.Add(c.Resources.Requests[v1.ResourceCPU])
+								mem.Add(c.Resources.Requests[v1.ResourceMemory])
+							}
+							return mem.String()
+						}(),
+						&pod.Status.Conditions,
+					)
+
+					// Check if pod is terminating
+					if pod.DeletionTimestamp != nil {
+						terminatingPodsExist = true
+						continue
+					}
 					if pod.Status.Phase == "Pending" && pod.Spec.NodeName == "" && pod.Spec.SchedulerName == "custom-scheduler" {
 						unscheduledPods = append(unscheduledPods, pod)
 					}
@@ -73,10 +119,12 @@ func main() {
 				networkgraph.SetNetworkKnowledge(queryLinkAPI())
 				currentGraph := networkgraph.GetGraph()
 				visualizer.DrawGraph(currentGraph, "pre")
-				if len(unscheduledPods) > 0 {
+				if len(unscheduledPods) > 0 && !terminatingPodsExist {
 					newGraph := scheduler.SchedulePods(currentGraph, unscheduledPods, false, false)
 					realiseGraph(newGraph, clientset)
 					visualizer.DrawGraph(newGraph, "post")
+				} else if terminatingPodsExist {
+					log.Println("Skipping scheduling: terminating pods still exist")
 				}
 
 			case <-quit:
@@ -90,32 +138,80 @@ func main() {
 }
 
 func queryK8API(clientset kubernetes.Clientset) common.K8Knowledge {
-	podList, err := clientset.CoreV1().Pods(metav1.NamespaceDefault).List(context.Background(), metav1.ListOptions{})
+	ctx := context.Background()
+
+	podList, err := clientset.CoreV1().Pods("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		log.Println("Error interacting with K8")
 	}
-	pods := podList.Items
 
-	// // Filter pods: keep only those scheduled by "custom-scheduler"
-	// filteredPods := pods[:0] // reuse underlying array (efficient)
-	//
-	// for _, pod := range pods {
-	// 	if pod.Status.Phase == "Pending" &&
-	// 		pod.Spec.NodeName == "" &&
-	// 		pod.Spec.SchedulerName == "custom-scheduler" {
-	//
-	// 		filteredPods = append(filteredPods, pod)
-	// 	}
-	// }
+	var defaultPods []k8.Pod
+	reservedCPU := map[string]resource.Quantity{}
+	reservedMem := map[string]resource.Quantity{}
 
-	// pods = filteredPods
+	for _, pod := range podList.Items {
 
-	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+		if pod.Namespace == metav1.NamespaceDefault {
+			defaultPods = append(defaultPods, pod)
+			continue
+		}
+
+		if pod.Status.Phase != k8.PodRunning && pod.Status.Phase != k8.PodPending {
+			continue
+		}
+
+		node := pod.Spec.NodeName
+		if node == "" {
+			continue
+		}
+
+		for _, c := range pod.Spec.Containers {
+			cpuReq := c.Resources.Requests[v1.ResourceCPU]
+			memReq := c.Resources.Requests[v1.ResourceMemory]
+
+			if existing, ok := reservedCPU[node]; ok {
+				existing.Add(cpuReq)
+				reservedCPU[node] = existing
+			} else {
+				reservedCPU[node] = cpuReq.DeepCopy()
+			}
+
+			if existing, ok := reservedMem[node]; ok {
+				existing.Add(memReq)
+				reservedMem[node] = existing
+			} else {
+				reservedMem[node] = memReq.DeepCopy()
+			}
+		}
+	}
+
+	nodeList, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		log.Println("Error interacting with K8")
 	}
+
 	nodes := nodeList.Items
-	return common.K8Knowledge{Pods: pods, Nodes: nodes}
+
+	for i := range nodes {
+		node := &nodes[i]
+
+		if reserved, ok := reservedCPU[node.Name]; ok {
+			alloc := node.Status.Allocatable[v1.ResourceCPU]
+			alloc.Sub(reserved)
+			node.Status.Allocatable[v1.ResourceCPU] = alloc
+		}
+
+		if reserved, ok := reservedMem[node.Name]; ok {
+			alloc := node.Status.Allocatable[v1.ResourceMemory]
+			alloc.Sub(reserved)
+			node.Status.Allocatable[v1.ResourceMemory] = alloc
+		}
+	}
+
+	return common.K8Knowledge{
+		Pods:  defaultPods,
+		Nodes: nodes,
+	}
 }
 
 func queryLinkAPI() []common.Link {
