@@ -4,7 +4,7 @@ while true; do
   echo "TIME: $(date +%s)" >>/logs/"$HOSTNAME".log
   # Try iperf3 on a range of ports and run the first one that works
   for port in $(seq 5002 5012); do
-    iperf3 -c "$TARGET" -u --bandwidth "$BANDWIDTH" -l 300 -p "$port" --pacing-timer 1000 >>/logs/"$HOSTNAME".log
+    iperf3 -c "$TARGET" -p "$port" -l 0.2K -t 7 -b $BANDWIDTH >>/logs/"$HOSTNAME".log
     if [[ "$?" -eq 0 ]]; then
       break
     fi
