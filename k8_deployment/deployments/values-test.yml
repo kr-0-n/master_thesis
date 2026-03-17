@@ -1,7 +1,7 @@
-replicaCount: 6
+replicaCount: 2
 env:
-  BANDWIDTH: "0.3" #in Mbit
-  LATENCY: "5"
+  BANDWIDTH: "300K" #use K for kbits, M for Mbits. Omit letter for bits
+  LATENCY: "20"
 
 server:
   CPU: "2000m"
