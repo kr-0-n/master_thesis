@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"k8_scheduler/common"
-	"k8_scheduler/scheduler"
-	"k8_scheduler/visualizer"
 	"log"
 	"os"
 	"time"
+
+	"k8_scheduler/common"
+	"k8_scheduler/scheduler"
+	"k8_scheduler/visualizer"
 
 	networkgraph "k8_scheduler/networkGraph"
 
@@ -121,6 +122,10 @@ func main() {
 				visualizer.DrawGraph(currentGraph, "pre")
 				if len(unscheduledPods) > 0 && !terminatingPodsExist {
 					newGraph := scheduler.SchedulePods(currentGraph, unscheduledPods, false, false)
+					realiseGraph(newGraph, clientset)
+					visualizer.DrawGraph(newGraph, "post")
+				} else if !terminatingPodsExist {
+					newGraph := scheduler.Optimize(currentGraph, false, false)
 					realiseGraph(newGraph, clientset)
 					visualizer.DrawGraph(newGraph, "post")
 				} else if terminatingPodsExist {
@@ -298,8 +303,14 @@ func realiseGraph(graph gograph.Graph[string, *common.Node], clientset *kubernet
 					log.Printf("Pod %s assigned to node %s\n", edge.Source, edge.Target)
 				}
 
-			} else {
-				log.Println("INCONSISTENCE: Pod assigned to node:", edge.Target, "but pod is assigned to node:", vertex.Properties["nodeName"])
+			} else if vertex.Properties["nodeName"] != edge.Target {
+				log.Println("POD MOVEMENT: Pod is scheduled on", vertex.Properties["nodeName"], "and will be moved to", edge.Target)
+				err := clientset.CoreV1().Pods("default").Delete(context.TODO(), edge.Source, metav1.DeleteOptions{})
+				if err != nil {
+					log.Println(err)
+				} else {
+					log.Printf("Pod %s Deleted. Waiting for K8s controller to reschedule\n", edge.Source)
+				}
 				continue
 			}
 

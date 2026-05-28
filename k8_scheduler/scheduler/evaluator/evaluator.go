@@ -52,7 +52,7 @@ func Evaluate(graph gograph.Graph[string, *common.Node], debug bool) float64 {
 	graph_copy := graph
 	edges, _ := graph_copy.Edges()
 	for _, edge := range edges {
-		if edge.Properties.Attributes["type"] == "networkComRequirement" {
+		if edge.Properties.Attributes["type"] == "networkComRequirement" || edge.Properties.Attributes["type"] == "offline_connection" {
 			graph_copy.RemoveEdge(edge.Source, edge.Target)
 		}
 	}

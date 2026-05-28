@@ -15,12 +15,7 @@ spec:
         app: api_server
     spec:
       containers:
-      - name: client 
-        image: ghcr.io/kr-0-n/master_thesis/api_server:latest
-        ports:
-        - containerPort: 50051
-      nodeSelector: 
-        "kubernetes.io/hostname": "manager-0"
-      imagePullSecrets:
-      - name: regcred
-    
+        - name: client
+          image: ghcr.io/kr-0-n/master_thesis/api_server:latest
+          ports:
+            - containerPort: 50051
