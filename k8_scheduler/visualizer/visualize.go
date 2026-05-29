@@ -1,6 +1,7 @@
 package visualizer
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -12,7 +13,7 @@ import (
 )
 
 func DrawGraph(graph gograph.Graph[string, *common.Node], prefix string) {
-	// fmt.Println("Drawing graph")
+	fmt.Println("Drawing graph", prefix)
 	vertices, _ := graph.AdjacencyMap()
 	for vertex := range vertices {
 		node, _ := graph.Vertex(vertex)
@@ -25,7 +26,8 @@ func DrawGraph(graph gograph.Graph[string, *common.Node], prefix string) {
 	}
 
 	file, _ := os.Create("./output/" + prefix + strconv.Itoa(int(time.Now().Unix())) + ".gv")
-	_ = draw.DOT(graph, file,
+	_ = draw.DOT(
+		graph, file,
 		draw.GraphAttribute("layout", "fdp"),
 		draw.GraphAttribute("splines", "line"),
 		draw.GraphAttribute("K", "0.6"),

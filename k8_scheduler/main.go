@@ -77,7 +77,8 @@ func main() {
 				unscheduledPods := []k8.Pod{}
 				terminatingPodsExist := false
 				for _, pod := range networkgraph.GetK8Knowledge().Pods {
-					log.Printf("Found Pod: %s, Phase: %s, NodeName: %s, Scheduler: %s, DeletionTimestamp: %s, CPUReq: %s, MemReq: %s, Status: %s\n",
+					log.Printf(
+						"Found Pod: %s, Phase: %s, NodeName: %s, Scheduler: %s, DeletionTimestamp: %s, CPUReq: %s, MemReq: %s, Status: %s\n",
 						pod.Name,
 						pod.Status.Phase,
 						pod.Spec.NodeName,
@@ -121,13 +122,15 @@ func main() {
 				currentGraph := networkgraph.GetGraph()
 				visualizer.DrawGraph(currentGraph, "pre")
 				if len(unscheduledPods) > 0 && !terminatingPodsExist {
+					log.Println("Scheduling pods: ", len(unscheduledPods))
 					newGraph := scheduler.SchedulePods(currentGraph, unscheduledPods, false, false)
 					realiseGraph(newGraph, clientset)
-					visualizer.DrawGraph(newGraph, "post")
+					visualizer.DrawGraph(newGraph, "post-schedule")
 				} else if !terminatingPodsExist {
+					log.Println("Optimizing schedule", len(unscheduledPods))
 					newGraph := scheduler.Optimize(currentGraph, false, false)
 					realiseGraph(newGraph, clientset)
-					visualizer.DrawGraph(newGraph, "post")
+					visualizer.DrawGraph(newGraph, "post-optimize")
 				} else if terminatingPodsExist {
 					log.Println("Skipping scheduling: terminating pods still exist")
 				}

@@ -15,6 +15,6 @@ stability:
 
 scheduler:
   evolutionary:
-    generations: 20
-    children_per_parent: 10
-    survivors_per_generation: 10
+    generations: 100
+    children_per_parent: 15
+    survivors_per_generation: 15
