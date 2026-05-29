@@ -1,0 +1,14 @@
+replicaCount: 1
+env:
+  BANDWIDTH: "0.03" #use K for kbits, M for Mbits. Omit letter for bits
+  LATENCY: "5"
+
+server:
+  CPU: "1900m"
+  MEM: "100Mi"
+  labels:
+    feature:
+
+client:
+  CPU: "900m"
+  MEM: "100Mi"
