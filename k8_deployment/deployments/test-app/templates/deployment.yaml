@@ -27,7 +27,7 @@ spec:
         - name: TARGET
           value: {{ .Release.Name }}-server
         - name: BANDWIDTH
-          value: "{{ .Values.env.BANDWIDTH }}"
+          value: "{{ .Values.env.BANDWIDTH }}M"
         - name: LATENCY
           value: "{{ .Values.env.LATENCY }}"
         - name: NetworkComRequirements
@@ -35,8 +35,6 @@ spec:
         volumeMounts:
         - name: logs
           mountPath: /logs
-      imagePullSecrets:
-      - name: regcred
       volumes:
       - name: logs
         hostPath:
@@ -76,8 +74,6 @@ spec:
         - mountPath: /logs
           name: logs-volume
           readOnly: false
-      imagePullSecrets:
-      - name: regcred
       volumes:
       - name: logs-volume
         hostPath:
